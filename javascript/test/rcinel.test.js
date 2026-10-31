@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import Rcinel, { format, TranslationSet } from '../src/index.js';
+import Rcinel, { format, language, onChange, reset, translate, tryLoad, TranslationSet, use, useObject } from '../src/index.js';
 import { useDirectory } from '../src/node.js';
 
 const translations = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', 'spec', 'fixtures', 'translations');
@@ -59,4 +59,27 @@ test('useObject takes bundled JSON imports', () => {
   Rcinel.useObject('de', { [SAVE]: 'Speichern' });
   assert.equal(Rcinel.translate(SAVE, 'Save'), 'Speichern');
   assert.throws(() => Rcinel.useObject('de', { [SAVE]: 1 }), /only strings/);
+});
+
+test('the functions can be imported by name and called bare, like C#', async () => {
+  const seen = [];
+  const off = onChange((set) => seen.push(set.language));
+  useObject('de', { [SAVE]: 'Speichern' });
+  assert.equal(translate(SAVE, 'Save'), 'Speichern');
+  assert.equal(language(), 'de');
+  // The named functions and the Rcinel object share one state.
+  assert.equal(Rcinel.translate(SAVE, 'Save'), 'Speichern');
+  assert.equal(await tryLoad('de-AT', { baseUrl: '/t', fetch: fakeFetch }), true);
+  assert.equal(translate(SAVE, 'Save'), 'Sichern');
+  use(TranslationSet.parse('fr', '{}'));
+  reset();
+  off();
+  assert.deepEqual(seen, ['de', 'de-AT', 'fr', '']);
+  assert.equal(translate(SAVE, 'Save'), 'Save');
+});
+
+test('destructuring the Rcinel object works too', () => {
+  const { translate: t, useObject: u } = Rcinel;
+  u('de', { [SAVE]: 'Speichern' });
+  assert.equal(t(SAVE, 'Save'), 'Speichern');
 });

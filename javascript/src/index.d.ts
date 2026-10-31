@@ -36,6 +36,24 @@ export type Values = readonly unknown[] | Readonly<Record<string, unknown>>;
 /** Fills {0}, {1}, ... from an array, or {name} from an object. Unknown placeholders stay. */
 export function format(text: string, values?: Values): string;
 
+/** The translation of id, or english when the loaded language has none. With values, fills {0}/{name}. */
+export function translate(id: string, english: string, values?: Values): string;
+/** The loaded language, such as "de". Empty while the app shows its English texts. */
+export function language(): string;
+/** Fetches the language with its fallback chain and switches to it. */
+export function load(language: string, options?: FetchOptions): Promise<void>;
+/** Like load, but resolves to false and keeps the current language when there is no file. */
+export function tryLoad(language: string, options?: FetchOptions): Promise<boolean>;
+/** Switches to a set the app built itself. */
+export function use(set: TranslationSet): void;
+/** Switches to a language from an already parsed object, such as a bundled JSON import. */
+export function useObject(language: string, texts: Readonly<Record<string, string>>): void;
+/** Goes back to the English texts of the calls. */
+export function reset(): void;
+/** Called after every language change; returns a function that removes the listener. */
+export function onChange(listener: (set: TranslationSet) => void): () => void;
+
+/** The same functions grouped, for code that prefers Rcinel.translate(...). */
 export interface RcinelApi {
   /** The translation of id, or english when the loaded language has none. */
   translate(id: string, english: string, values?: Values): string;

@@ -147,22 +147,100 @@ export function format(text, values) {
 let current = EMPTY;
 const listeners = new Set();
 
+// The functions are standalone, so they can be imported by name and called bare,
+// `translate("id", "Save")`, the same shape as C#'s Translate("id", "Save"). The Rcinel object
+// below groups the same functions for code that prefers Rcinel.translate(...). None of them uses
+// `this`, so destructuring (`const { translate } = Rcinel`) works too.
+
+/**
+ * The translation of id, or english when the loaded language has none. With values, fills
+ * {0}/{name} placeholders (see format).
+ * @param {string} id
+ * @param {string} english
+ * @param {unknown[] | Record<string, unknown>} [values]
+ */
+export function translate(id, english, values) {
+  return format(current.get(id, english), values);
+}
+
+/** The loaded language, such as "de". Empty while the app shows its English texts. */
+export function language() {
+  return current.language;
+}
+
+/** Switches to a set the app built itself, for example from a bundled JSON import. */
+export function use(set) {
+  if (!(set instanceof TranslationSet)) {
+    throw new TypeError('use needs a TranslationSet; build one with TranslationSet.parse(language, json).');
+  }
+  current = set;
+  for (const listener of listeners) {
+    listener(set);
+  }
+}
+
+/**
+ * Fetches language from options.baseUrl (default "translations/", relative to the page) and
+ * switches to it.
+ */
+export async function load(language, options) {
+  use(await fetchTranslationSet(language, options));
+}
+
+/**
+ * Switches to language if the app ships it and resolves to true; otherwise keeps the current one
+ * and resolves to false. Handy for following the browser: tryLoad(navigator.language).
+ */
+export async function tryLoad(language, options) {
+  const set = await tryFetchTranslationSet(language, options);
+  if (set) {
+    use(set);
+  }
+  return set !== null;
+}
+
+/**
+ * Switches to a language from an already parsed object, such as `import de from './de.json'`.
+ * Values must be strings, as in the files.
+ */
+export function useObject(language, texts) {
+  const map = new Map();
+  for (const [id, text] of Object.entries(texts)) {
+    if (typeof text !== 'string') {
+      throw new TranslationFormatError(`${id}: translation files hold only strings.`);
+    }
+    map.set(id, text);
+  }
+  use(new TranslationSet(language, map));
+}
+
+/** Goes back to the English texts of the calls. */
+export function reset() {
+  use(EMPTY);
+}
+
+/**
+ * Calls listener after every language change, so a UI can redraw. Returns a function that removes
+ * it again.
+ */
+export function onChange(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 /**
  * The app-wide entry point. Load a language once at start (and again when the user picks another),
- * then write every UI text as Rcinel.translate("UUIDv7", "English text"). The English text is the
+ * then write every UI text as translate("UUIDv7", "English text"). The English text is the
  * fallback and the source of truth: `rcinel scan` collects the calls into the source file.
  */
 export const Rcinel = Object.freeze({
-  /**
-   * The translation of id, or english when the loaded language has none. With values, fills
-   * {0}/{name} placeholders (see format).
-   * @param {string} id
-   * @param {string} english
-   * @param {unknown[] | Record<string, unknown>} [values]
-   */
-  translate(id, english, values) {
-    return format(current.get(id, english), values);
-  },
+  translate,
+  load,
+  tryLoad,
+  use,
+  useObject,
+  reset,
+  onChange,
 
   /** The loaded language, such as "de". Empty while the app shows its English texts. */
   get language() {
@@ -172,66 +250,6 @@ export const Rcinel = Object.freeze({
   /** The loaded set. */
   get current() {
     return current;
-  },
-
-  /**
-   * Fetches language from options.baseUrl (default "translations/", relative to the page) and
-   * switches to it.
-   */
-  async load(language, options) {
-    this.use(await fetchTranslationSet(language, options));
-  },
-
-  /**
-   * Switches to language if the app ships it and resolves to true; otherwise keeps the current one
-   * and resolves to false. Handy for following the browser: Rcinel.tryLoad(navigator.language).
-   */
-  async tryLoad(language, options) {
-    const set = await tryFetchTranslationSet(language, options);
-    if (set) {
-      this.use(set);
-    }
-    return set !== null;
-  },
-
-  /** Switches to a set the app built itself, for example from a bundled JSON import. */
-  use(set) {
-    if (!(set instanceof TranslationSet)) {
-      throw new TypeError('Rcinel.use needs a TranslationSet; build one with TranslationSet.parse(language, json).');
-    }
-    current = set;
-    for (const listener of listeners) {
-      listener(set);
-    }
-  },
-
-  /**
-   * Switches to a language from an already parsed object, such as `import de from './de.json'`.
-   * Values must be strings, as in the files.
-   */
-  useObject(language, texts) {
-    const map = new Map();
-    for (const [id, text] of Object.entries(texts)) {
-      if (typeof text !== 'string') {
-        throw new TranslationFormatError(`${id}: translation files hold only strings.`);
-      }
-      map.set(id, text);
-    }
-    this.use(new TranslationSet(language, map));
-  },
-
-  /** Goes back to the English texts of the calls. */
-  reset() {
-    this.use(EMPTY);
-  },
-
-  /**
-   * Calls listener after every language change, so a UI can redraw. Returns a function that
-   * removes it again.
-   */
-  onChange(listener) {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
   },
 });
 
