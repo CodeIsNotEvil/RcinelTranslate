@@ -79,6 +79,13 @@ class ConformanceTest {
         }
     }
 
+    @Test
+    void emptyLanguagesLoadNothingWithTryLoad() throws IOException {
+        for (JsonElement language : CASES.getAsJsonArray("emptyLanguages")) {
+            assertNull(TranslationSet.tryLoad(language.getAsString(), TRANSLATIONS));
+        }
+    }
+
     @TestFactory
     Stream<DynamicTest> rejectsInvalidFiles() {
         List<DynamicTest> tests = new ArrayList<>();

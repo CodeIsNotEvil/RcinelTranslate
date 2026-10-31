@@ -101,6 +101,10 @@ export async function fetchTranslationSet(language, options = {}) {
 
 /** Like fetchTranslationSet, but resolves to null when no file of the chain exists. */
 export async function tryFetchTranslationSet(language, options = {}) {
+  // An empty language (navigator.language can be "" in some embedded browsers) means "none".
+  if (typeof language !== 'string' || language.trim() === '') {
+    return null;
+  }
   const doFetch = options.fetch ?? globalThis.fetch;
   const base = String(options.baseUrl ?? 'translations/');
   const prefix = base.endsWith('/') ? base : `${base}/`;

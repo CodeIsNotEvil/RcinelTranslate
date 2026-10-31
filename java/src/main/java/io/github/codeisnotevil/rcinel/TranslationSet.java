@@ -99,8 +99,14 @@ public final class TranslationSet {
         return set;
     }
 
-    /** Like {@link #load(String, Path)}, but returns null when no file of the chain exists. */
+    /**
+     * Like {@link #load(String, Path)}, but returns null when no file of the chain exists, or when
+     * {@code language} is empty (the root locale's tag is "und" and its toString() is "").
+     */
     public static TranslationSet tryLoad(String language, Path directory) throws IOException {
+        if (isBlank(language)) {
+            return null;
+        }
         Map<String, String> merged = new HashMap<>();
         boolean found = false;
         List<String> chain = fallbackChain(language);
@@ -120,6 +126,9 @@ public final class TranslationSet {
      * with the same fallback chain. Returns null when no resource of the chain exists.
      */
     public static TranslationSet tryLoadResource(String language, ClassLoader loader, String folder) throws IOException {
+        if (isBlank(language)) {
+            return null;
+        }
         Map<String, String> merged = new HashMap<>();
         boolean found = false;
         List<String> chain = fallbackChain(language);
@@ -139,6 +148,10 @@ public final class TranslationSet {
             }
         }
         return found ? new TranslationSet(language, merged) : null;
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 
     /**

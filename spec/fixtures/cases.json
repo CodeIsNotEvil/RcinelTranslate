@@ -1,5 +1,5 @@
 {
-  "_comment": "Conformance cases every client (C#, Java, JavaScript) runs. Load the language from translations/, then translate id with english as the fallback.",
+  "_comment": "Conformance cases every client (C#, Java, JavaScript) runs. Load the language from translations/, then translate id with english as the fallback. Loading an empty language with the Try variants finds nothing instead of failing.",
   "translate": [
     {
       "language": "de",
@@ -163,5 +163,9 @@
     "text-after.json",
     "trailing-comma.json",
     "unclosed-string.json"
+  ],
+  "emptyLanguages": [
+    "",
+    "   "
   ]
 }

@@ -39,6 +39,12 @@ test('missing languages reject and tryLoad resolves to null', async () => {
   }
 });
 
+test('empty languages load nothing with the try variants', async () => {
+  for (const language of cases.emptyLanguages) {
+    assert.equal(await tryLoadDirectory(language, translations), null);
+  }
+});
+
 for (const name of cases.invalid) {
   test(`rejects ${name}`, async () => {
     const text = readFileSync(join(fixtures, 'invalid', name), 'utf8');

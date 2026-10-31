@@ -41,6 +41,9 @@ function missing(language, directory) {
 
 /** Reads a language with its fallback chain from a folder. Resolves to null when no file exists. */
 export async function tryLoadDirectory(language, directory) {
+  if (typeof language !== 'string' || language.trim() === '') {
+    return null;
+  }
   const files = await Promise.all(paths(language, directory).map((path) =>
     readFile(path, 'utf8').then((text) => ({ path, text }), orNull)));
   return merge(language, files);
