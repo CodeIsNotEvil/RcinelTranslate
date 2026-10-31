@@ -1,0 +1,84 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout EmptyLayout
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@inject UserStore Users
+@inject NavigationManager Navigation
+
+<PageTitle>Sign in · RcinelTranslate</PageTitle>
+
+<div class="card narrow">
+  <div class="brand-large">
+    <img src="favicon.svg" alt="" width="40" height="40" />
+    <h1>RcinelTranslate</h1>
+  </div>
+
+  @if (Users.SetupToken is not null)
+  {
+    <p class="notice">There are no accounts yet. Open the setup link from the editor's log to create the first admin.</p>
+  }
+
+  <form method="post" @formname="login" @onsubmit="SignIn" class="stack">
+    <AntiforgeryToken />
+    <label>
+      User name
+      <input name="Input.Name" value="@Input.Name" autocomplete="username" required autofocus />
+    </label>
+    <label>
+      Password
+      <input name="Input.Password" type="password" autocomplete="current-password" required />
+    </label>
+    @if (error is not null)
+    {
+      <p class="error-box" role="alert">@error</p>
+    }
+    <button type="submit" class="primary">Sign in</button>
+  </form>
+</div>
+
+@code {
+  public sealed class LoginInput
+  {
+    public string Name { get; set; } = "";
+    public string Password { get; set; } = "";
+  }
+
+  [CascadingParameter]
+  private HttpContext HttpContext { get; set; } = default!;
+
+  [SupplyParameterFromForm]
+  private LoginInput Input { get; set; } = default!;
+
+  protected override void OnInitialized() => Input ??= new();
+
+  [SupplyParameterFromQuery]
+  private string? ReturnUrl { get; set; }
+
+  private string? error;
+
+  private async Task SignIn()
+  {
+    if (Users.IsLockedOut(Input.Name))
+    {
+      error = "Too many wrong passwords. Wait a minute and try again.";
+      return;
+    }
+    EditorUser? user = Users.Verify(Input.Name, Input.Password);
+    if (user is null)
+    {
+      error = "The user name or password is wrong.";
+      return;
+    }
+    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, UserStore.Principal(user),
+      new AuthenticationProperties { IsPersistent = true });
+    Navigation.NavigateTo(SafeReturnUrl(ReturnUrl));
+  }
+
+  /// <summary>Only paths on this site: "//evil.example" or "https://..." would turn the login into an open redirect.</summary>
+  internal static string SafeReturnUrl(string? url) =>
+    url is { Length: > 0 } && url[0] == '/' && !url.StartsWith("//", StringComparison.Ordinal) && !url.StartsWith("/\\", StringComparison.Ordinal)
+      ? url
+      : "/";
+}

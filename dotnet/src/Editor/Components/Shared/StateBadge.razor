@@ -1,0 +1,6 @@
+<span class="badge @State.ToString().ToLowerInvariant()">@Views.StateName(State)</span>
+
+@code {
+  [Parameter, EditorRequired]
+  public TranslationState State { get; set; }
+}

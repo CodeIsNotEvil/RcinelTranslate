@@ -1,0 +1,231 @@
+@page "/"
+@implements IDisposable
+@inject ProjectStore Store
+@inject DraftJobs Jobs
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>Overview · RcinelTranslate</PageTitle>
+
+<div class="page">
+  <header class="page-head">
+    <div>
+      <h1>@model.Name</h1>
+      <p class="muted">
+        @model.Total strings in @model.SourceLanguage ·
+        <span title="@model.ProjectFile">@model.ProjectFile</span>
+      </p>
+    </div>
+    <div class="actions">
+      <button class="ghost" @onclick="Reload" title="Read the files again, for example after a git pull">Reload from disk</button>
+      @if (isAdmin && model.CanScan)
+      {
+        <button class="ghost" @onclick="Scan" title="Collect Rcinel.Translate calls from the code, like `rcinel scan`">Scan code</button>
+      }
+    </div>
+  </header>
+
+  @if (message is not null)
+  {
+    <p class="notice">@message</p>
+  }
+
+  @if (!Jobs.IsConfigured)
+  {
+    <p class="notice">
+      AI drafts are off: start the editor with the environment variable <code>ANTHROPIC_API_KEY</code> set to an API key
+      from <a href="https://platform.claude.com" target="_blank" rel="noopener">platform.claude.com</a>.
+    </p>
+  }
+
+  @if (model.Languages.Count == 0)
+  {
+    <div class="card">
+      <h2>No languages yet</h2>
+      <p>@(isAdmin ? "Add the first target language below." : "An admin needs to add a target language first.")</p>
+    </div>
+  }
+
+  <div class="language-grid">
+    @foreach (LanguageCard card in model.Languages)
+    {
+      DraftJob? job = Jobs.Get(card.Code);
+      <article class="card language-card">
+        <div class="language-card-head">
+          <h2><a href="@($"languages/{card.Code}")">@card.Name</a></h2>
+          <span class="big-percent">@card.Progress.ConfirmedPercent%</span>
+        </div>
+        <ProgressBar Progress="card.Progress" ShowLegend="true" />
+        <p class="muted small">@card.Progress.TranslatedPercent% translated, @card.Progress.ConfirmedPercent% confirmed@(card.Progress.Orphaned > 0 ? $" · {card.Progress.Orphaned} unused" : "")</p>
+        @if (job is { Finished: false })
+        {
+          <div class="job">
+            <progress max="@Math.Max(1, job.Progress.Total)" value="@job.Progress.Done"></progress>
+            <span>AI is drafting: @job.Progress.Done of @job.Progress.Total</span>
+            <button class="ghost small" @onclick="job.Cancel">Stop</button>
+          </div>
+        }
+        else if (job is { Finished: true } && job.Started > loadedAt.AddMinutes(-30))
+        {
+          <p class="muted small">
+            Last AI run by @job.StartedBy: @job.Progress.Applied drafts stored@(job.Error is null ? "" : $", {job.Error}")@(job.Progress.Problems.Count > 0 ? $", {job.Progress.Problems.Count} problem(s)" : "").
+          </p>
+        }
+        <div class="actions">
+          <a class="button primary" href="@($"languages/{card.Code}")">Review</a>
+          @if (Jobs.IsConfigured && job is not { Finished: false } && card.Open > 0)
+          {
+            <button @onclick="() => Draft(card.Code)" title="Drafts missing and outdated strings; reviewers confirm them afterwards">Draft @card.Open with AI</button>
+          }
+        </div>
+      </article>
+    }
+  </div>
+
+  @if (isAdmin)
+  {
+    <section class="card">
+      <h2>Add a language</h2>
+      <form class="inline-form" @onsubmit="AddLanguage">
+        <label>Code <input @bind="newCode" placeholder="de, pt-BR, zh-Hant" required /></label>
+        <label>Name <input @bind="newName" placeholder="Deutsch" /></label>
+        <button type="submit" class="primary">Add</button>
+      </form>
+      @if (addError is not null)
+      {
+        <p class="error-box">@addError</p>
+      }
+    </section>
+  }
+
+  @if (model.Issues.Count > 0)
+  {
+    <section class="card">
+      <h2>Checks</h2>
+      <p class="muted small">The same checks as <code>rcinel check</code>. Errors would break or confuse the app.</p>
+      <ul class="issues">
+        @foreach (ProjectIssue issue in model.Issues.Take(50))
+        {
+          <li class="@(issue.Severity == IssueSeverity.Error ? "error" : "warning")">
+            <strong>@issue.Code</strong>
+            @if (issue.Language is not null)
+            {
+              <a href="@($"languages/{issue.Language}?id={issue.Id}")">[@issue.Language]</a>
+            }
+            @issue.Message
+          </li>
+        }
+      </ul>
+      @if (model.Issues.Count > 50)
+      {
+        <p class="muted small">... and @(model.Issues.Count - 50) more.</p>
+      }
+    </section>
+  }
+</div>
+
+@code {
+  private sealed record LanguageCard(string Code, string Name, LanguageProgress Progress, int Open);
+
+  private sealed record Model(
+    string Name,
+    string SourceLanguage,
+    int Total,
+    string ProjectFile,
+    bool CanScan,
+    List<LanguageCard> Languages,
+    List<ProjectIssue> Issues);
+
+  private Model model = new("", "", 0, "", false, [], []);
+  private bool isAdmin;
+  private string user = "";
+  private string? message;
+  private string newCode = "";
+  private string newName = "";
+  private string? addError;
+  private readonly DateTimeOffset loadedAt = DateTimeOffset.UtcNow;
+
+  protected override async Task OnInitializedAsync()
+  {
+    var state = await Auth.GetAuthenticationStateAsync();
+    isAdmin = state.User.IsInRole(Roles.Admin);
+    user = state.User.Identity?.Name ?? "";
+    Store.Changed += OnChanged;
+    Jobs.Changed += OnChanged;
+    Refresh();
+  }
+
+  private void Refresh()
+  {
+    if (!Store.EnsureLoaded())
+    {
+      return;
+    }
+    model = Store.Read(p => new Model(
+      string.IsNullOrWhiteSpace(p.Settings.Name) ? "Translations" : p.Settings.Name,
+      p.Settings.SourceLanguage,
+      p.Source.Count,
+      p.ProjectFile,
+      p.Settings.Sources.Any(s => Directory.Exists(Path.Combine(p.Directory, s))),
+      [.. p.Languages.Select(l =>
+      {
+        LanguageProgress progress = p.GetProgress(l.Code);
+        return new LanguageCard(l.Code, l.Settings.DisplayName, progress, progress.Missing + progress.Stale);
+      })],
+      [.. ProjectChecker.Check(p).OrderByDescending(i => i.Severity)]));
+  }
+
+  private void OnChanged() => InvokeAsync(() =>
+  {
+    Refresh();
+    StateHasChanged();
+  });
+
+  private void Draft(string code)
+  {
+    message = Jobs.Start(code, user) is null ? "A run for this language is already going." : null;
+  }
+
+  private void Reload()
+  {
+    Store.Reload();
+    message = Store.LoadError is null ? "Read the project from disk again." : null;
+  }
+
+  private void Scan()
+  {
+    ScanResult? scan = null;
+    SourceUpdate? update = null;
+    Store.Write(p =>
+    {
+      scan = SourceScanner.Scan(p);
+      if (!scan.HasErrors)
+      {
+        update = SourceScanner.Apply(p, scan);
+      }
+    });
+    message = update is not null
+      ? $"Scanned {scan!.FilesScanned} files: {update.Added} new, {update.Changed} changed, {update.Removed} removed strings."
+      : $"The scan found errors, so nothing changed: {string.Join(" ", scan!.Issues.Where(i => i.IsError).Take(3).Select(i => $"{Path.GetFileName(i.File)}:{i.Line} {i.Message}."))} Run `rcinel scan` for the full list.";
+  }
+
+  private void AddLanguage()
+  {
+    addError = null;
+    try
+    {
+      string code = newCode.Trim();
+      Store.Write(p => p.AddLanguage(new LanguageSettings { Code = code, Name = newName.Trim() }));
+      newCode = newName = "";
+    }
+    catch (ArgumentException e)
+    {
+      addError = e.Message;
+    }
+  }
+
+  public void Dispose()
+  {
+    Store.Changed -= OnChanged;
+    Jobs.Changed -= OnChanged;
+  }
+}

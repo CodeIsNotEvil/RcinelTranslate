@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    The web editor: Blazor with server interactivity, so it works on the project files directly
+    (no API layer to keep in step) and one process serves a small team. The project folder it edits
+    is the one in the app's git repository; users and keys live in a separate data folder.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>Rcinel.Translate.Editor</AssemblyName>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Rcinel.Translate.Core.csproj" />
+    <ProjectReference Include="..\Ai\Rcinel.Translate.Ai.csproj" />
+    <InternalsVisibleTo Include="Rcinel.Translate.Editor.Tests" />
+  </ItemGroup>
+
+</Project>

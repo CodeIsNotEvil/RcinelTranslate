@@ -1,0 +1,139 @@
+@page "/settings"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject ProjectStore Store
+@inject DraftJobs Jobs
+
+<PageTitle>Settings · RcinelTranslate</PageTitle>
+
+<div class="page">
+  <h1>Settings</h1>
+  <p class="muted">Stored in rcinel.json, so they're versioned with the translations. The AI and the reviewers both see the instructions.</p>
+
+  @if (form is not null)
+  {
+    <form class="stack" @onsubmit="Save">
+      <section class="card stack">
+        <h2>Project</h2>
+        <label>App name <input @bind="form.Name" placeholder="Shown to translators and the AI" /></label>
+      </section>
+
+      <section class="card stack">
+        <h2>AI drafts</h2>
+        @if (!Jobs.IsConfigured)
+        {
+          <p class="notice small">Set <code>ANTHROPIC_API_KEY</code> for the editor to use these.</p>
+        }
+        <div class="inline-form">
+          <label>Model <input @bind="form.Model" /></label>
+          <label>
+            Effort
+            <select @bind="form.Effort">
+              <option value="low">low (fastest)</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+              <option value="xhigh">xhigh</option>
+              <option value="max">max (slowest)</option>
+            </select>
+          </label>
+          <label>Strings per request <input type="number" min="1" max="200" @bind="form.BatchSize" /></label>
+        </div>
+        <label>
+          Instructions for every language
+          <textarea rows="5" @bind="form.Instructions" placeholder="Tone, words that stay English, a small glossary: “Workspace” is always “Arbeitsbereich”."></textarea>
+        </label>
+      </section>
+
+      <section class="card stack">
+        <h2>Languages</h2>
+        @foreach (LanguageForm language in form.Languages)
+        {
+          <fieldset class="stack">
+            <legend><code>@language.Code</code></legend>
+            <label>Name <input @bind="language.Name" placeholder="Deutsch" /></label>
+            <label>
+              Style for this language
+              <textarea rows="2" @bind="language.Instructions" placeholder="Address the user informally (du). Use gender-neutral forms."></textarea>
+            </label>
+          </fieldset>
+        }
+        @if (form.Languages.Count == 0)
+        {
+          <p class="muted small">Add languages on the overview page.</p>
+        }
+      </section>
+
+      <div class="actions">
+        <button type="submit" class="primary">Save</button>
+        @if (saved)
+        {
+          <span class="muted">Saved.</span>
+        }
+      </div>
+    </form>
+  }
+</div>
+
+@code {
+  private sealed class LanguageForm
+  {
+    public string Code { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Instructions { get; set; } = "";
+  }
+
+  private sealed class Form
+  {
+    public string Name { get; set; } = "";
+    public string Model { get; set; } = "";
+    public string Effort { get; set; } = "";
+    public int BatchSize { get; set; }
+    public string Instructions { get; set; } = "";
+    public List<LanguageForm> Languages { get; set; } = [];
+  }
+
+  private Form? form;
+  private bool saved;
+
+  protected override void OnInitialized()
+  {
+    if (!Store.EnsureLoaded())
+    {
+      return;
+    }
+    form = Store.Read(p => new Form
+    {
+      Name = p.Settings.Name,
+      Model = p.Settings.Ai.Model,
+      Effort = p.Settings.Ai.Effort,
+      BatchSize = p.Settings.Ai.BatchSize,
+      Instructions = p.Settings.Ai.Instructions,
+      Languages = [.. p.Settings.Languages.Select(l => new LanguageForm { Code = l.Code, Name = l.Name, Instructions = l.Instructions })],
+    });
+  }
+
+  private void Save()
+  {
+    if (form is null)
+    {
+      return;
+    }
+    Form f = form;
+    Store.Write(p =>
+    {
+      p.Settings.Name = f.Name.Trim();
+      p.Settings.Ai.Model = string.IsNullOrWhiteSpace(f.Model) ? AiSettings.DefaultModel : f.Model.Trim();
+      p.Settings.Ai.Effort = f.Effort;
+      p.Settings.Ai.BatchSize = Math.Clamp(f.BatchSize, 1, 200);
+      p.Settings.Ai.Instructions = f.Instructions.Trim();
+      foreach (LanguageForm l in f.Languages)
+      {
+        if (p.Settings.Languages.FirstOrDefault(x => x.Code == l.Code) is { } settings)
+        {
+          settings.Name = l.Name.Trim();
+          settings.Instructions = l.Instructions.Trim();
+        }
+      }
+    });
+    saved = true;
+  }
+}

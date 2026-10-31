@@ -1,0 +1,71 @@
+@*
+  A screenshot with every marked string painted over in the chosen language. app.js fits each text
+  into its box: it first finds the font size at which the source text fits (about the size of the
+  original), then shows the translation at that size, and marks the box when it only fits smaller.
+*@
+<div class="shot @(Drawing ? "drawing" : "")" style="aspect-ratio:@Ratio" data-shot="@Shot.Id" @ref="Element">
+  <img src="@($"images/{Uri.EscapeDataString(Shot.File)}")" alt="@Shot.Title" draggable="false" />
+  @if (!ShowOriginal)
+  {
+    @foreach (Region region in Shot.Regions)
+    {
+      string key = region.Key;
+      bool selected = key == Selected;
+      <div class="region align-@region.Align @(selected ? "selected" : "") @(OnRegionClick.HasDelegate ? "clickable" : "")"
+           style="@Style(region)"
+           data-fit
+           data-source="@(Sources.TryGetValue(key, out string? source) ? source : "")"
+           data-font="@(region.FontSize > 0 ? region.FontSize.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) : null)"
+           title="@(Sources.TryGetValue(key, out string? s) ? s : key)"
+           @onclick="() => OnRegionClick.InvokeAsync(key)">
+        <span>@(Texts.TryGetValue(key, out string? text) ? text : "")</span>
+      </div>
+    }
+  }
+  else if (Selected is not null)
+  {
+    @foreach (Region region in Shot.Regions.Where(r => r.Key == Selected))
+    {
+      <div class="region outline-only" style="@Position(region)"></div>
+    }
+  }
+</div>
+
+@code {
+  [Parameter, EditorRequired]
+  public Screenshot Shot { get; set; } = default!;
+
+  /// <summary>What each region shows, by string id.</summary>
+  [Parameter, EditorRequired]
+  public Dictionary<string, string> Texts { get; set; } = [];
+
+  /// <summary>The source text of each region, the yardstick for the font size.</summary>
+  [Parameter, EditorRequired]
+  public Dictionary<string, string> Sources { get; set; } = [];
+
+  [Parameter]
+  public string? Selected { get; set; }
+
+  [Parameter]
+  public bool ShowOriginal { get; set; }
+
+  [Parameter]
+  public bool Drawing { get; set; }
+
+  [Parameter]
+  public EventCallback<string> OnRegionClick { get; set; }
+
+  public ElementReference Element { get; private set; }
+
+  private string Ratio => Shot is { Width: > 0, Height: > 0 } ? $"{Shot.Width} / {Shot.Height}" : "16 / 10";
+
+  private static string Pct(double value) => (value * 100).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+  private static string Position(Region r) => $"left:{Pct(r.X)};top:{Pct(r.Y)};width:{Pct(r.Width)};height:{Pct(r.Height)};";
+
+  private static string Style(Region r) => Position(r) + $"background:{Safe(r.Background, "#ffffff")};color:{Safe(r.Color, "#000000")};";
+
+  // Colours go into a style attribute; only accept #rrggbb so a hand-edited file can't inject CSS.
+  private static string Safe(string color, string fallback) =>
+    System.Text.RegularExpressions.Regex.IsMatch(color, "^#[0-9a-fA-F]{6}$") ? color : fallback;
+}

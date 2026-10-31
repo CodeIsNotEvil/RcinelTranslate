@@ -1,0 +1,52 @@
+@page "/account"
+@inject UserStore UserStore
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Account · RcinelTranslate</PageTitle>
+
+<div class="page">
+  <h1>@name</h1>
+  <section class="card narrow-card">
+    <h2>Change your password</h2>
+    <form class="stack" @onsubmit="Change">
+      <label>Current password <input type="password" @bind="current" autocomplete="current-password" required /></label>
+      <label>New password (at least 10 characters) <input type="password" @bind="next" autocomplete="new-password" required minlength="10" /></label>
+      @if (error is not null)
+      {
+        <p class="error-box">@error</p>
+      }
+      <button type="submit" class="primary">Change</button>
+    </form>
+  </section>
+</div>
+
+@code {
+  private string name = "";
+  private string current = "";
+  private string next = "";
+  private string? error;
+
+  protected override async Task OnInitializedAsync() =>
+    name = (await Auth.GetAuthenticationStateAsync()).User.Identity?.Name ?? "";
+
+  private void Change()
+  {
+    error = null;
+    if (UserStore.Verify(name, current) is null)
+    {
+      error = "The current password is wrong.";
+      return;
+    }
+    try
+    {
+      UserStore.SetPassword(name, next);
+      // The new stamp ends every session of this user, this one too; sign in again with the new password.
+      Navigation.NavigateTo("login", forceLoad: true);
+    }
+    catch (ArgumentException e)
+    {
+      error = e.Message;
+    }
+  }
+}
