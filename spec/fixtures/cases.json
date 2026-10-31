@@ -1,0 +1,167 @@
+{
+  "_comment": "Conformance cases every client (C#, Java, JavaScript) runs. Load the language from translations/, then translate id with english as the fallback.",
+  "translate": [
+    {
+      "language": "de",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000001",
+      "english": "Save",
+      "expected": "Speichern"
+    },
+    {
+      "language": "de",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000003",
+      "english": "Hello {name}!",
+      "expected": "Hallo {name}!"
+    },
+    {
+      "language": "de",
+      "id": "0192f3a0-1c4e-7a10-8000-0000000000ff",
+      "english": "Not translated",
+      "expected": "Not translated"
+    },
+    {
+      "language": "de-AT",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000001",
+      "english": "Save",
+      "expected": "Sichern"
+    },
+    {
+      "language": "de-AT",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000002",
+      "english": "Cancel",
+      "expected": "Abbrechen"
+    },
+    {
+      "language": "de_AT",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000001",
+      "english": "Save",
+      "expected": "Sichern"
+    },
+    {
+      "language": "de-CH",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000001",
+      "english": "Save",
+      "expected": "Speichern"
+    },
+    {
+      "language": "special",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000004",
+      "english": "",
+      "expected": "Say \"hi\""
+    },
+    {
+      "language": "special",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000005",
+      "english": "",
+      "expected": "Line one\nLine two"
+    },
+    {
+      "language": "special",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000006",
+      "english": "",
+      "expected": "Tab\there"
+    },
+    {
+      "language": "special",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000007",
+      "english": "",
+      "expected": "Emoji 😀 and 😀"
+    },
+    {
+      "language": "special",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000008",
+      "english": "",
+      "expected": "Grüße, été"
+    },
+    {
+      "language": "special",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000009",
+      "english": "",
+      "expected": "a/b and c\\d"
+    },
+    {
+      "language": "special",
+      "id": "0192f3a0-1c4e-7a10-8000-00000000000a",
+      "english": "Empty",
+      "expected": ""
+    },
+    {
+      "language": "special",
+      "id": "0192f3a0-1c4e-7a10-8000-00000000000b",
+      "english": "",
+      "expected": "\b\f\r"
+    },
+    {
+      "language": "bom",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000001",
+      "english": "Save",
+      "expected": "Mit BOM"
+    },
+    {
+      "language": "compact",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000002",
+      "english": "Two",
+      "expected": "Zwei"
+    },
+    {
+      "language": "empty",
+      "id": "0192f3a0-1c4e-7a10-8000-000000000001",
+      "english": "Save",
+      "expected": "Save"
+    }
+  ],
+  "counts": {
+    "de": 3,
+    "de-AT": 3,
+    "special": 8,
+    "empty": 0
+  },
+  "fallbackChains": [
+    {
+      "language": "de",
+      "chain": [
+        "de"
+      ]
+    },
+    {
+      "language": "de-AT",
+      "chain": [
+        "de-AT",
+        "de"
+      ]
+    },
+    {
+      "language": "zh-Hant-TW",
+      "chain": [
+        "zh-Hant-TW",
+        "zh-Hant",
+        "zh"
+      ]
+    },
+    {
+      "language": "pt_BR",
+      "chain": [
+        "pt-BR",
+        "pt"
+      ]
+    }
+  ],
+  "missingLanguages": [
+    "fr",
+    "xx-YY"
+  ],
+  "invalid": [
+    "bad-escape.json",
+    "duplicate.json",
+    "empty-file.json",
+    "nested.json",
+    "not-object.json",
+    "number.json",
+    "raw-newline.json",
+    "short-unicode.json",
+    "single-quotes.json",
+    "text-after.json",
+    "trailing-comma.json",
+    "unclosed-string.json"
+  ]
+}

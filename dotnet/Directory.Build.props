@@ -1,0 +1,29 @@
+<Project>
+  <!--
+    Every .NET library and app of CodeIsNotEvil lives under the CINE root namespace (the same rule as
+    in MyMonoRepo). Here the projects are called Rcinel.Translate.* because that is what NuGet shows,
+    but a CINE.Rcinel namespace would hide the Rcinel class: inside any CINE.* namespace (all of the
+    owner's apps) the name `Rcinel` would bind to the namespace CINE.Rcinel before the using
+    directive is looked at, and `Rcinel.Translate(...)` would stop compiling. So the "Rcinel." prefix
+    of the project name becomes "CINE." in the namespace: Rcinel.Translate.Core -> CINE.Translate.Core.
+  -->
+  <PropertyGroup>
+    <RootNamespace>$(MSBuildProjectName.Replace('Rcinel.', 'CINE.'))</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <!--
+      The release version for every package and app. The vX.Y.Z tag must match it, so must
+      java/gradle.properties and javascript/package.json (CI checks all three), and CHANGELOG.md
+      needs a section for it.
+    -->
+    <Version>0.1.0</Version>
+    <Authors>CodeIsNotEvil</Authors>
+    <Copyright>Copyright (c) 2026 CodeIsNotEvil</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/CodeIsNotEvil/RcinelTranslate</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/CodeIsNotEvil/RcinelTranslate</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>translation;localization;i18n;l10n;uuidv7</PackageTags>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

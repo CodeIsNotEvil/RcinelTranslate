@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The client: what an app ships. netstandard2.0 so it runs on .NET Framework 4.6.1+, Mono, Unity,
+    Xamarin and every modern .NET, and without dependencies, so adding it never pulls a JSON library
+    into somebody's app. It only reads the shipped translation files (docs/format.md).
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>Rcinel.Translate</PackageId>
+    <AssemblyName>Rcinel.Translate</AssemblyName>
+    <Description>Loads a translation set for a language and translates with Rcinel.Translate("UUIDv7", "English text"). No dependencies.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Rcinel.Translate.Core" />
+    <InternalsVisibleTo Include="Rcinel.Translate.Tests" />
+    <InternalsVisibleTo Include="Rcinel.Translate.Core.Tests" />
+  </ItemGroup>
+
+</Project>
