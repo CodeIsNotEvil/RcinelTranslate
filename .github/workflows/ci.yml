@@ -1,14 +1,15 @@
 # Builds and tests all three clients, the CLI and the editor, checks that every part carries the same
-# version, and that the editor's container image still builds. On a vX.Y.Z tag it also checks that
-# the tag matches the version and that CHANGELOG.md has a section for it.
+# version, and that the editor's container image still builds. The release workflow runs it first on
+# a vX.Y.Z tag, where it also checks that the tag matches the version and that CHANGELOG.md has a
+# dated section for it.
 name: CI
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

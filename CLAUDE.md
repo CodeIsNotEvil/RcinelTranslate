@@ -100,7 +100,9 @@ Document commands as `podman compose ...`, never `docker-compose`.
 
 One version for everything: `<Version>` in `dotnet/Directory.Build.props`, `version` in
 `java/gradle.properties` and in `javascript/package.json`. CI checks they agree. A release is a
-`vX.Y.Z` tag matching them, with a section in `CHANGELOG.md`.
+`vX.Y.Z` tag matching them, with a dated section in `CHANGELOG.md`; pushing it runs
+`.github/workflows/release.yml`, which publishes to NuGet, Maven Central and npm (README,
+"Releasing"). Pushing a tag publishes for real, so only the owner decides when.
 
 The clients have no dependencies and must keep it that way. When the editor, CLI or tests gain one,
 check its license fits MIT and mention it in the README's License section.

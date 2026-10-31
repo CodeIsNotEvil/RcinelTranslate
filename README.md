@@ -226,10 +226,33 @@ empty, and a screenshot with all its texts marked. Point the editor at `samples/
 | JavaScript client | `javascript/` | `npm test` (Node 18+) |
 
 The version is the same everywhere: `<Version>` in `dotnet/Directory.Build.props`,
-`java/gradle.properties` and `javascript/package.json`, and CI checks they agree. Releases are
-`vX.Y.Z` tags with a section in [CHANGELOG.md](CHANGELOG.md).
+`java/gradle.properties` and `javascript/package.json`, and CI checks they agree.
+
+## Releasing
+
+A `vX.Y.Z` tag publishes everything through the
+[Release workflow](.github/workflows/release.yml). It first runs CI, which also checks that the tag
+matches the three version numbers and that [CHANGELOG.md](CHANGELOG.md) has a dated section
+(`## X.Y.Z - yyyy-mm-dd`). Then it publishes:
+
+| Where | What | Secrets |
+|---|---|---|
+| NuGet | `Rcinel.Translate`, `Rcinel.Translate.Core`, the `Rcinel.Translate.Cli` tool | `NUGET_API_KEY`: an API key from nuget.org with push rights for `Rcinel.Translate*` |
+| Maven Central | `io.github.codeisnotevil:rcinel-translate`, signed | `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_PASSWORD`: a user token from central.sonatype.com (the `io.github.codeisnotevil` namespace must be verified there, which GitHub accounts can do). `MAVEN_SIGNING_KEY`: an ASCII-armored GPG private key whose public key is on a keyserver, and `MAVEN_SIGNING_PASSWORD`: its passphrase |
+| npm | `rcinel-translate`, with a provenance statement | `NPM_TOKEN`: an automation or granular token from npmjs.com |
+| GitHub | a release with the changelog section as notes and the packages attached | none |
+
+Add the secrets under the repository's Settings, Secrets and variables, Actions. A release whose
+secret is missing stops with an error naming it. Re-running a release after a partial failure is
+safe: versions that already reached NuGet or npm are skipped.
+
+To release: set the version in the three files, date its CHANGELOG section, merge, then
+`git tag v0.1.0 && git push origin v0.1.0`.
 
 ## License
 
 MIT, see [LICENSE](LICENSE). The clients have no dependencies. The editor and the CLI use the
 official [Anthropic C# SDK](https://github.com/anthropics/anthropic-sdk-csharp) (MIT) for AI drafts.
+The Java build publishes with the
+[Gradle Maven Publish Plugin](https://github.com/vanniktech/gradle-maven-publish-plugin)
+(Apache 2.0), which is a build tool and not part of the published library.

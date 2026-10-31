@@ -1,0 +1,159 @@
+# Publishes a release when a vX.Y.Z tag is pushed: the .NET packages (client, core, rcinel tool) to
+# NuGet, the Java client to Maven Central, the JavaScript client to npm, and a GitHub release with the
+# CHANGELOG.md section as notes. CI runs first and checks that the tag, the three version numbers
+# and the changelog agree, so nothing is published from a broken or mislabelled commit.
+#
+# Secrets (README, "Releasing"): NUGET_API_KEY; MAVEN_CENTRAL_USERNAME, MAVEN_CENTRAL_PASSWORD (a
+# Central Portal user token), MAVEN_SIGNING_KEY, MAVEN_SIGNING_PASSWORD; NPM_TOKEN.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+# Two pushes of the same tag must not publish twice in parallel.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  nuget:
+    needs: ci
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: dotnet
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: The API key is there
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::error::The NUGET_API_KEY secret is missing. See README.md, \"Releasing\"."
+            exit 1
+          fi
+      # ContinuousIntegrationBuild makes the build deterministic and maps the source paths in the
+      # PDBs to /_/, so the packages don't contain the runner's folders.
+      - name: Pack
+        run: |
+          for project in src/Translate src/Core src/Cli; do
+            dotnet pack "$project" -c Release -o ../artifacts -p:ContinuousIntegrationBuild=true
+          done
+      # --skip-duplicate: re-running a release whose NuGet step already went through must not fail.
+      - name: Push
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "../artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget
+          path: artifacts/*.nupkg
+
+  maven:
+    needs: ci
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: java
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: The credentials are there
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_SIGNING_KEY: ${{ secrets.MAVEN_SIGNING_KEY }}
+        run: |
+          if [ -z "$MAVEN_CENTRAL_USERNAME" ] || [ -z "$MAVEN_CENTRAL_PASSWORD" ] || [ -z "$MAVEN_SIGNING_KEY" ]; then
+            echo "::error::A Maven Central secret is missing (MAVEN_CENTRAL_USERNAME, MAVEN_CENTRAL_PASSWORD, MAVEN_SIGNING_KEY). See README.md, \"Releasing\"."
+            exit 1
+          fi
+      # The plugin (com.vanniktech.maven.publish) signs, uploads the bundle to the Central Portal and
+      # releases it. It reads the ORG_GRADLE_PROJECT_* variables as Gradle properties.
+      - name: Publish and release
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.MAVEN_SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.MAVEN_SIGNING_PASSWORD }}
+        run: ./gradlew --no-daemon --no-configuration-cache publishAndReleaseToMavenCentral
+      - uses: actions/upload-artifact@v4
+        with:
+          name: maven
+          path: java/build/libs/*.jar
+
+  npm:
+    needs: ci
+    runs-on: ubuntu-24.04
+    # id-token: npm's provenance statement links the package to this workflow run.
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: javascript
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: The token is there
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error::The NPM_TOKEN secret is missing. See README.md, \"Releasing\"."
+            exit 1
+          fi
+      - run: npm test
+      # npm refuses to publish a version twice; a re-run after a successful publish skips it.
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if npm view "rcinel-translate@$version" version > /dev/null 2>&1; then
+            echo "rcinel-translate@$version is already on npm."
+          else
+            npm publish --provenance --access public
+          fi
+
+  github-release:
+    needs: [nuget, maven, npm]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      # The notes are the version's section of CHANGELOG.md, without its heading.
+      - name: Release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## " v " - " { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          cat notes.md
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "RcinelTranslate ${GITHUB_REF_NAME#v}" --notes-file notes.md --verify-tag artifacts/nuget/*.nupkg artifacts/maven/*.jar
