@@ -1,7 +1,7 @@
 {
   "name": "rcinel-translate",
   "version": "0.1.0",
-  "description": "Loads a translation set for a language and translates with Rcinel.translate(\"UUIDv7\", \"English text\"). No dependencies, for browsers and Node.",
+  "description": "Loads a translation set for a language and translates with translate(\"UUIDv7\", \"English text\"). No dependencies, for browsers and Node.",
   "type": "module",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",

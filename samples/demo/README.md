@@ -1,7 +1,7 @@
 # Demo
 
 A small notes app to try RcinelTranslate with. `src/SettingsPage.cs` and `web/app.js` call
-`Translate` / `Rcinel.translate`; `i18n/` is the project those calls produced with
+`Translate` (C#) / `translate` (JavaScript); `i18n/` is the project those calls produced with
 `rcinel scan --assign`, with:
 
 - German partly done: some confirmed, some AI drafts, one outdated because the English changed after

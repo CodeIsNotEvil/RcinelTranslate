@@ -8,14 +8,16 @@ saveButton.Text = Translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");
 ```
 
 ```java
-saveButton.setText(Rcinel.translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save"));
+saveButton.setText(translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save"));
 ```
 
 ```js
-saveButton.textContent = Rcinel.translate('01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d', 'Save');
+saveButton.textContent = translate('01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d', 'Save');
 ```
 
-and the app shows "Speichern" when German is loaded, or "Save" when there's no translation yet.
+and the app shows "Speichern" when German is loaded, or "Save" when there's no translation yet. The
+call has the same shape in all three languages; only the first letter follows each language's
+convention.
 
 Around that one call there is:
 
@@ -38,7 +40,7 @@ Around that one call there is:
 
 ```
 your app's repository
-├── src/                              Translate("id", "English text") calls
+├── src/                              Translate / translate("id", "English text") calls
 └── i18n/
     ├── rcinel.json                   the project: languages, code folders, AI settings
     ├── translations/   ← ship this   en.json (from `rcinel scan`), de.json, fr.json, ...
@@ -46,7 +48,7 @@ your app's repository
     └── context/                      notes and screenshots for translators
 ```
 
-1. Write `Translate("", "English text")` (C#) or `Rcinel.translate("", "English text")` (Java,
+1. Write `Translate("", "English text")` (C#) or `translate("", "English text")` (Java,
    JavaScript) in the code.
 2. `rcinel scan --assign` gives every new call its id (in your code) and writes the English texts to
    `translations/en.json`.
@@ -120,13 +122,18 @@ implementation("io.github.codeisnotevil:rcinel-translate:0.1.0")
 ```
 
 ```java
-import io.github.codeisnotevil.rcinel.Rcinel;
+import static io.github.codeisnotevil.rcinel.Rcinel.translate;
+import static io.github.codeisnotevil.rcinel.Rcinel.tryLoad;
 
 // Reads translations/<language>.json from the class path (put the folder in src/main/resources).
-Rcinel.tryLoad(Locale.getDefault().toLanguageTag());
+tryLoad(Locale.getDefault().toLanguageTag());
 
-title.setText(Rcinel.translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings"));
+title.setText(translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings"));
+toast.setText(translate("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", count));
 ```
+
+Kotlin works the same way with `import io.github.codeisnotevil.rcinel.Rcinel.translate`. If you
+prefer the class name in front, `Rcinel.translate(...)` works too.
 
 On Android, put the files in `assets/translations/` and load them with
 `TranslationSet.read(language, getAssets().open("translations/de.json"))` and `Rcinel.use(set)`.
@@ -139,18 +146,20 @@ npm install rcinel-translate
 ```
 
 ```js
-import Rcinel from 'rcinel-translate';
+import { translate, tryLoad } from 'rcinel-translate';
 
 // Fetches translations/<language>.json relative to the page.
-await Rcinel.tryLoad(navigator.language, { baseUrl: '/translations/' });
+await tryLoad(navigator.language, { baseUrl: '/translations/' });
 
-title.textContent = Rcinel.translate('01a192e3-5bcc-7000-a8d2-327b1cb0f737', 'Settings');
-greeting.textContent = Rcinel.translate('01a192e3-5bd4-7008-9a54-036fafe0c7af', 'Welcome back, {name}!', { name });
+title.textContent = translate('01a192e3-5bcc-7000-a8d2-327b1cb0f737', 'Settings');
+greeting.textContent = translate('01a192e3-5bd4-7008-9a54-036fafe0c7af', 'Welcome back, {name}!', { name });
 ```
 
-In Node, `import { useDirectory } from 'rcinel-translate/node'` reads the files from disk. With a
-bundler you can also import the JSON and call `Rcinel.useObject('de', de)`. TypeScript types are
-included.
+Every function (`translate`, `load`, `tryLoad`, `use`, `useObject`, `reset`, `onChange`,
+`language`) is a named export; the default export `Rcinel` groups the same functions for code that
+prefers `Rcinel.translate(...)`. In Node, `import { useDirectory } from 'rcinel-translate/node'`
+reads the files from disk. With a bundler you can also import the JSON and call
+`useObject('de', de)`. TypeScript types are included.
 
 ## The `rcinel` command
 
@@ -181,10 +190,10 @@ de        ###----...  35%      5         1        3
 fr        -.........   0%      2         0       12
 ```
 
-The scanner reads `Translate(...)` (C#) and `Rcinel.translate(...)` (Java, Kotlin, JavaScript,
-TypeScript) calls whose id and text are plain string literals. Since other code has methods called
-`Translate` too, a bare `Translate(...)` only counts when its first argument is `""` or a UUID; the
-others are left alone. Anything it can't read, such as a
+The scanner reads `Translate(...)` (C#) and `translate(...)` or `Rcinel.translate(...)` (Java,
+Kotlin, JavaScript, TypeScript) calls whose id and text are plain string literals. Since other code
+has functions called `translate` too, a bare call only counts when its first argument is `""` or a
+UUID; the others are left alone. Anything it can't read, such as a
 variable, `$"..."` or a template literal with `${}`, it reports, because a text the scanner can't
 see can't be translated. If you wrap the call, add your wrapper's name to `functions` in
 `rcinel.json`.

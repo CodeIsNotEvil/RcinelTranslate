@@ -117,7 +117,7 @@ JavaScript's fills `{0}` from an array or `{name}` from an object.
   "sourceLanguage": "en",
   "translations": "translations",
   "sources": ["../src", "../web"],
-  "functions": ["Translate", "Rcinel.translate"],
+  "functions": ["Translate", "translate", "Rcinel.translate"],
   "languages": [
     { "code": "de", "name": "Deutsch", "instructions": "Address the user informally (du)." }
   ],

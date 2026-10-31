@@ -32,8 +32,8 @@ public sealed class ScanResult
 public sealed record SourceUpdate(int Added, int Changed, int Removed);
 
 /// <summary>
-/// Collects Translate("id", "text") calls (C#) and Rcinel.translate("id", "text") calls (Java, Kotlin,
-/// JavaScript/TypeScript)
+/// Collects Translate("id", "text") calls (C#) and translate("id", "text") or Rcinel.translate(...)
+/// calls (Java, Kotlin, JavaScript/TypeScript)
 /// files, like xgettext does for gettext. The code is the source of truth for the source texts; the
 /// source file is generated from it, which is why the editor doesn't let anyone edit English.
 /// </summary>
@@ -162,8 +162,8 @@ public static class SourceScanner
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", RegexOptions.CultureInvariant);
 
   /// <summary>
-  /// C#'s call is a bare Translate(...) (Rcinel.Translate can't compile, see Directory.Build.props),
-  /// and plenty of other code has a method of that name. A bare call only counts as ours when its
+  /// Every client's call is a bare Translate(...) or translate(...) (in C# Rcinel.Translate can't
+  /// even compile, see Directory.Build.props), and plenty of other code has a function of that name. A bare call only counts as ours when its
   /// first argument is "" or shaped like a UUID; anything else is somebody else's Translate and is
   /// left alone instead of failing the scan.
   /// </summary>

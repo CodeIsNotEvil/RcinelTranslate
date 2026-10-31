@@ -47,7 +47,7 @@ mavenPublishing {
     }
     pom {
         name.set("RcinelTranslate")
-        description.set("Loads a translation set for a language and translates with Rcinel.translate(\"UUIDv7\", \"English text\").")
+        description.set("Loads a translation set for a language and translates with translate(\"UUIDv7\", \"English text\") after a static import.")
         inceptionYear.set("2026")
         url.set("https://github.com/CodeIsNotEvil/RcinelTranslate")
         licenses {

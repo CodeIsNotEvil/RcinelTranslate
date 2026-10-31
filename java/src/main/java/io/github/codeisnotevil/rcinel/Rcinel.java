@@ -8,7 +8,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The app-wide entry point. Load a language once at start (and again when the user picks another),
- * then write every UI text as {@code Rcinel.translate("UUIDv7", "English text")}.
+ * then write every UI text as {@code translate("UUIDv7", "English text")} after
+ * {@code import static io.github.codeisnotevil.rcinel.Rcinel.translate;}, the same call as the C# and
+ * JavaScript clients ({@code Rcinel.translate(...)} works as well).
  *
  * <p>The English text in the call is the source of truth and the fallback: `rcinel scan` collects
  * the calls into the source file, and an id without a translation shows the English text. That's

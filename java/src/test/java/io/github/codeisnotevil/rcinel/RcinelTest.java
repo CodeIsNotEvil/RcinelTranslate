@@ -1,5 +1,6 @@
 package io.github.codeisnotevil.rcinel;
 
+import static io.github.codeisnotevil.rcinel.Rcinel.translate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -69,7 +70,15 @@ class RcinelTest {
 
     @Test
     void readsStreamsWithABom() throws IOException {
-        byte[] bytes = "﻿{\"a\": \"b\"}".getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = "\uFEFF{\"a\": \"b\"}".getBytes(StandardCharsets.UTF_8);
         assertEquals("b", TranslationSet.read("x", new ByteArrayInputStream(bytes)).get("a", "fallback"));
+    }
+
+    @Test
+    void appsCallTranslateBareAfterAStaticImport() throws IOException {
+        // The same shape as C#'s Translate("id", "Save") and JavaScript's translate("id", "Save").
+        Rcinel.load("de", TRANSLATIONS);
+        assertEquals("Speichern", translate(SAVE, "Save"));
+        assertEquals("3 of 5", translate("0192f3a0-1c4e-7a10-8000-0000000000ff", "{0} of {1}", 3, 5));
     }
 }

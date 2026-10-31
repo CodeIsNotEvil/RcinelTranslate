@@ -24,11 +24,12 @@ public sealed class ProjectSettings
   public List<string> Sources { get; set; } = [];
 
   /// <summary>
-  /// The calls `rcinel scan` looks for. The default covers C# (Translate, after
-  /// `using static Rcinel.Translate.Rcinel;`) and Java and JavaScript (Rcinel.translate). Add more if
-  /// the app wraps the call, for example "T".
+  /// The calls `rcinel scan` looks for. The default covers the bare call in every client
+  /// (Translate in C#, translate in Java and JavaScript) and the qualified Rcinel.translate. Bare
+  /// names only count with "" or a UUID as the first argument, so other libraries' translate
+  /// functions are ignored. Add more if the app wraps the call, for example "T".
   /// </summary>
-  public List<string> Functions { get; set; } = ["Translate", "Rcinel.translate"];
+  public List<string> Functions { get; set; } = ["Translate", "translate", "Rcinel.translate"];
 
   /// <summary>The target languages, in the order the editor lists them.</summary>
   public List<LanguageSettings> Languages { get; set; } = [];

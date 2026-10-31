@@ -108,6 +108,17 @@ public class SourceScannerTests
   }
 
   [Fact]
+  public void Finds_the_bare_call_in_java_and_javascript()
+  {
+    using TempProject temp = new("de");
+    temp.WriteSource("Main.java", $"import static io.github.codeisnotevil.rcinel.Rcinel.translate;\nlabel.setText(translate(\"{A}\", \"Save\"));");
+    temp.WriteSource("app.js", $"import {{ translate }} from 'rcinel-translate';\nel.textContent = translate('{B}', 'Cancel');\nconst other = i18n.translate('greeting', 'de');\nconst t = translate(key, 'de');");
+    ScanResult scan = SourceScanner.Scan(temp.Project);
+    Assert.Empty(scan.Issues);
+    Assert.Equal(["Save", "Cancel"], scan.Strings.Values.Select(s => s.Text));
+  }
+
+  [Fact]
   public void Other_apis_called_Translate_are_left_alone()
   {
     using TempProject temp = new("de");
