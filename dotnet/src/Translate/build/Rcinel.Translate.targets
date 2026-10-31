@@ -1,0 +1,28 @@
+<Project>
+  <!--
+    Imported into every project that references the Rcinel.Translate package directly (NuGet
+    imports build/<package id>.targets; not buildTransitive, so a library that uses the package
+    doesn't push the import onto the apps that use the library).
+
+    It imports the Rcinel class for the whole project, so code calls Translate("id", "English text")
+    without any using. A plain `using Rcinel.Translate;` can't do that: it imports types, not
+    methods, and Rcinel.Translate(...) doesn't compile in apps because C# reads Rcinel as the
+    namespace.
+
+    Only for .NET 6 and newer, whose default C# version (10+) knows global usings. Older targets
+    (.NET Framework, netstandard) default to C# 7.3, where the generated global using would break
+    the build; they write `using static Rcinel.Translate.Rcinel;` per file instead.
+
+    Switch it off with <RcinelTranslateGlobalUsing>false</RcinelTranslateGlobalUsing>, for example
+    when the project has its own method called Translate.
+
+    The condition is on an item, so MSBuild evaluates it after all properties are known, including
+    TargetFrameworkIdentifier and anything the project file sets after this import.
+  -->
+  <ItemGroup Condition="'$(RcinelTranslateGlobalUsing)' != 'false'
+                        and '$(TargetFrameworkIdentifier)' == '.NETCoreApp'
+                        and '$(TargetFrameworkVersion)' != ''
+                        and $([MSBuild]::VersionGreaterThanOrEquals($(TargetFrameworkVersion.TrimStart('vV')), '6.0'))">
+    <Using Include="Rcinel.Translate.Rcinel" Static="true" />
+  </ItemGroup>
+</Project>

@@ -6,13 +6,13 @@ namespace Rcinel.Translate;
 
 /// <summary>
 /// The app-wide entry point. Load a language once at start (and again when the user picks another),
-/// then write every UI text as <c>Translate("UUIDv7", "English text")</c> after
-/// <c>using static Rcinel.Translate.Rcinel;</c>.
+/// then write every UI text as <c>Translate("UUIDv7", "English text")</c>. On .NET 6+ the package
+/// imports this class for the whole project; elsewhere, add <c>using static Rcinel.Translate.Rcinel;</c>.
 /// </summary>
 /// <remarks>
 /// <c>Rcinel.Translate(...)</c> doesn't compile in apps: the root namespace is also called Rcinel,
-/// and C# finds the namespace before this class. The <c>using static</c> import avoids that, and
-/// <c>rcinel scan</c> looks for the bare <c>Translate(...)</c> call.
+/// and C# finds the namespace before this class. The (global) <c>using static</c> import avoids that,
+/// and <c>rcinel scan</c> looks for the bare <c>Translate(...)</c> call.
 /// </remarks>
 /// <remarks>
 /// The English text in the call is the source of truth and the fallback: `rcinel scan` collects

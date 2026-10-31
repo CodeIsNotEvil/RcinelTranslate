@@ -12,9 +12,10 @@ Format: a `## <version> - <yyyy-mm-dd>` heading per release (the version must ma
 
 ### Added
 - Clients for .NET (netstandard2.0), Java (8+) and JavaScript that load a language with its fallback
-  chain and translate with `Translate("UUIDv7", "English text")` (C#, after
-  `using static Rcinel.Translate.Rcinel;`) or `Rcinel.translate(...)` (Java, JavaScript). None has
-  dependencies.
+  chain and translate with `Translate("UUIDv7", "English text")` (C#) or `Rcinel.translate(...)`
+  (Java, JavaScript). None has dependencies. On .NET 6 and newer the NuGet package imports the
+  `Rcinel` class for the whole project, so C# code needs no using; `RcinelTranslateGlobalUsing`
+  set to `false` switches that off.
 - The file format: one flat JSON file per language, sorted by UUIDv7 so new strings land at the end,
   plus review and context files for the editor.
 - The `rcinel` command: `init`, `scan` (with `--assign` to fill in ids), `status`, `check`, `format`,

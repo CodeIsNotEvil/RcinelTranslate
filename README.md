@@ -4,7 +4,7 @@ Translations for apps, keyed by UUIDv7, for C#, Java and JavaScript. You write t
 it's used:
 
 ```csharp
-saveButton.Text = Translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");   // using static Rcinel.Translate.Rcinel;
+saveButton.Text = Translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");
 ```
 
 ```java
@@ -72,8 +72,7 @@ dotnet add package Rcinel.Translate
 ```
 
 ```csharp
-using static Rcinel.Translate.Rcinel;
-
+// No using needed on .NET 6 and newer: the package imports the Rcinel class for the whole project.
 // Reads translations/<language>.json next to the app.
 TryLoad(CultureInfo.CurrentUICulture.Name);
 
@@ -83,11 +82,26 @@ toast.Text = Translate("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settin
 LanguageChanged += (_, _) => RefreshTexts();
 ```
 
-The namespace is `Rcinel.Translate`, and the class with the static methods is `Rcinel` in it. Import
-the class with `using static` as above and call its methods without a prefix: an app can't write
-`Rcinel.Translate(...)`, because C# reads `Rcinel` there as the namespace. Where a bare name is
-ambiguous, the full name works: `Rcinel.Translate.Rcinel.Directory = ...` sets the folder the files
-are read from.
+The methods belong to the class `Rcinel` in the namespace `Rcinel.Translate`. On .NET 6 and newer
+the package adds `global using static Rcinel.Translate.Rcinel;` to your project, so `Translate`,
+`TryLoad`, `Load`, `Use` and `LanguageChanged` work in every file without a prefix or a using.
+
+- **Older targets** (.NET Framework, netstandard, Unity and others on C# 7.3) don't know global
+  usings and don't get it. Write `using static Rcinel.Translate.Rcinel;` at the top of each file
+  instead.
+- **Switch it off** if your project has its own `Translate` method, and use the per-file
+  `using static` where you need it:
+
+  ```xml
+  <PropertyGroup>
+    <RcinelTranslateGlobalUsing>false</RcinelTranslateGlobalUsing>
+  </PropertyGroup>
+  ```
+
+A plain `using Rcinel.Translate;` imports only the types, not the methods. `Rcinel.Translate(...)`
+doesn't compile in apps either, because C# reads `Rcinel` there as the namespace. Where a bare name
+is ambiguous, the full name works: `Rcinel.Translate.Rcinel.Directory = ...` sets the folder the
+files are read from.
 
 Ship the files by copying the project's translations folder into the output:
 

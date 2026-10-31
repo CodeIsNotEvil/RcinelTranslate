@@ -78,8 +78,11 @@ without BOM. C# uses file-scoped namespaces and primary constructors; Java is pl
 Namespaces are the project names, `Rcinel.Translate.*` (the owner's choice for this repository; it
 departs from MyMonoRepo's `CINE` root namespace, and decision 0008 is still to be revised by the
 owner). Because the root namespace is called `Rcinel`, apps can't write `Rcinel.Translate(...)`: C#
-binds `Rcinel` to the namespace. Apps write `using static Rcinel.Translate.Rcinel;` and call
-`Translate(...)`, and that is the C# call `rcinel scan` collects. Inside this repository's own
+binds `Rcinel` to the namespace. Apps call a bare `Translate(...)`, the C# call `rcinel scan`
+collects: on .NET 6+ the package's `build/Rcinel.Translate.targets` adds
+`global using static Rcinel.Translate.Rcinel;` (off with `RcinelTranslateGlobalUsing=false`), older
+targets write the `using static` per file. `PackageTests` packs the package and builds projects
+against it to keep that working. Inside this repository's own
 namespaces `Rcinel` means the class, but a qualified name that starts with `Rcinel.` then fails too:
 write `global::Rcinel.Translate....` there (Razor's `_Imports.razor` does).
 

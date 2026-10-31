@@ -10,9 +10,14 @@
     <IsPackable>true</IsPackable>
     <PackageId>Rcinel.Translate</PackageId>
     <AssemblyName>Rcinel.Translate</AssemblyName>
-    <Description>Loads a translation set for a language and translates with Translate("UUIDv7", "English text") (using static Rcinel.Translate.Rcinel). No dependencies.</Description>
+    <Description>Loads a translation set for a language and translates with Translate("UUIDv7", "English text"); on .NET 6+ without any using. No dependencies.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The global `using static` for apps on .NET 6+, see the file. -->
+    <None Include="build\Rcinel.Translate.targets" Pack="true" PackagePath="build\" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Rcinel.Translate.Core" />
