@@ -19,6 +19,13 @@ status: active
   `OnInitialized` with `??=`.
 - **`@code` in Razor markup** is the directive, even as `@code` inside an attribute value. Don't name
   loop variables `code`.
+- **A root namespace named like a class.** With the namespace `Rcinel.Translate` and the class
+  `Rcinel`, `Rcinel.Translate(...)` binds `Rcinel` to the namespace in apps (CS0118), so apps use
+  `using static`. Inside our own namespaces it's the other way round: `Rcinel` is the class, and
+  `Rcinel.Translate.Core.X` fails; write `global::Rcinel...` there. Razor puts `@using` inside the
+  component's namespace, so `_Imports.razor` needs `global::` too.
+- **The invariant culture's name is "".** `CultureInfo.CurrentUICulture.Name` is empty in many
+  containers; anything that takes "the system language" must treat "" as "none".
 - **Maven Central rate-limits** (HTTP 429) from shared CI or sandbox IPs; retry with back-off.
 
 Related: [[rcineltranslate]]

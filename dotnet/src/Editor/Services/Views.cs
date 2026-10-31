@@ -1,6 +1,6 @@
-using CINE.Translate.Core;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Editor.Services;
+namespace Rcinel.Translate.Editor.Services;
 
 /// <summary>
 /// Copies of project data for rendering. Components get these from ProjectStore.Read and never the

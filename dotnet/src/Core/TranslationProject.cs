@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 /// <summary>The texts and review states of one target language.</summary>
 public sealed class LanguageData(LanguageSettings settings)
@@ -328,7 +328,7 @@ internal static class ProjectFiles
     }
     try
     {
-      return CINE.Translate.FlatJsonReader.ReadDictionary(File.ReadAllText(path, Encoding.UTF8));
+      return FlatJsonReader.ReadDictionary(File.ReadAllText(path, Encoding.UTF8));
     }
     catch (FormatException e)
     {

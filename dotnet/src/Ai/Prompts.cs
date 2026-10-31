@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using CINE.Translate.Core;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Ai;
+namespace Rcinel.Translate.Ai;
 
 /// <summary>
 /// The prompt. The system part depends only on the run (project, language, examples), so it is the

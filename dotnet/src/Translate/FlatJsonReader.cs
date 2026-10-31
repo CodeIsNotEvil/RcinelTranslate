@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace CINE.Translate;
+namespace Rcinel.Translate;
 
 /// <summary>
 /// Reads a translation file: one JSON object whose values are all strings (docs/format.md).

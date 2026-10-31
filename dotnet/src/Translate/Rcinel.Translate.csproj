@@ -10,7 +10,7 @@
     <IsPackable>true</IsPackable>
     <PackageId>Rcinel.Translate</PackageId>
     <AssemblyName>Rcinel.Translate</AssemblyName>
-    <Description>Loads a translation set for a language and translates with Rcinel.Translate("UUIDv7", "English text"). No dependencies.</Description>
+    <Description>Loads a translation set for a language and translates with Translate("UUIDv7", "English text") (using static Rcinel.Translate.Rcinel). No dependencies.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 

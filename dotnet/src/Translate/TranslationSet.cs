@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace CINE.Translate;
+namespace Rcinel.Translate;
 
 /// <summary>
 /// The translations of one language, read from the shipped files. Immutable, so one set can be
@@ -88,9 +88,18 @@ public sealed class TranslationSet
     return set!;
   }
 
-  /// <summary>Like <see cref="Load"/>, but returns false instead of throwing when no file of the chain exists.</summary>
+  /// <summary>
+  /// Like <see cref="Load"/>, but returns false instead of throwing when no file of the chain exists,
+  /// or when <paramref name="language"/> is empty: the invariant culture's name is "", which is
+  /// what CultureInfo.CurrentUICulture.Name gives in many containers.
+  /// </summary>
   public static bool TryLoad(string language, string directory, out TranslationSet? set)
   {
+    if (string.IsNullOrWhiteSpace(language))
+    {
+      set = null;
+      return false;
+    }
     Dictionary<string, string> merged = new(StringComparer.Ordinal);
     bool found = false;
     // FallbackChain goes from specific to general; apply general first so specific files win.

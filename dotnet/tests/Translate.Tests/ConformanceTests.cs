@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace CINE.Translate.Tests;
+namespace Rcinel.Translate.Tests;
 
 /// <summary>
 /// spec/fixtures/cases.json, the cases the Java and JavaScript clients run too. If one of them
@@ -65,6 +65,15 @@ public class ConformanceTests
     foreach (JsonElement language in Cases.GetProperty("missingLanguages").EnumerateArray())
     {
       Assert.Throws<FileNotFoundException>(() => TranslationSet.Load(language.GetString()!, Translations));
+      Assert.False(TranslationSet.TryLoad(language.GetString()!, Translations, out _));
+    }
+  }
+
+  [Fact]
+  public void Empty_languages_load_nothing_with_TryLoad()
+  {
+    foreach (JsonElement language in Cases.GetProperty("emptyLanguages").EnumerateArray())
+    {
       Assert.False(TranslationSet.TryLoad(language.GetString()!, Translations, out _));
     }
   }

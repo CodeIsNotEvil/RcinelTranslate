@@ -1,6 +1,6 @@
-using CINE.Translate.Editor.Services;
+using Rcinel.Translate.Editor.Services;
 
-namespace CINE.Translate.Editor.Tests;
+namespace Rcinel.Translate.Editor.Tests;
 
 public class ImageInfoTests
 {

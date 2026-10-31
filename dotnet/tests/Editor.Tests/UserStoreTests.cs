@@ -1,9 +1,9 @@
-using CINE.Translate.Editor.Services;
+using Rcinel.Translate.Editor.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-namespace CINE.Translate.Editor.Tests;
+namespace Rcinel.Translate.Editor.Tests;
 
 public sealed class UserStoreTests : IDisposable
 {

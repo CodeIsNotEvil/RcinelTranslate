@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 /// <summary>
 /// UUIDv7 (RFC 9562) ids, the keys of every string. The first 48 bits are the Unix time in

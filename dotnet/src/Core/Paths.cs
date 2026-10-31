@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 /// <summary>Path helpers netstandard2.0 lacks.</summary>
 public static class Paths

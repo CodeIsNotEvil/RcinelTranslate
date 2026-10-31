@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using CINE.Translate.Ai;
-using CINE.Translate.Core;
+using Rcinel.Translate.Ai;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Editor.Tests;
+namespace Rcinel.Translate.Editor.Tests;
 
 /// <summary>
 /// The request the translator sends, checked on the wire with a fake HTTP handler: no API key or

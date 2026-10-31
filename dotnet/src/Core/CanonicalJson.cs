@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 /// <summary>
 /// Writes the project's files in one fixed layout: keys sorted ordinally (UUIDv7 order = creation

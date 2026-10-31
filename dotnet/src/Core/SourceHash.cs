@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 /// <summary>
 /// A short fingerprint of a source text, stored with each review. When the English text in the code

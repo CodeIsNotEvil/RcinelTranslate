@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
-using CINE.Translate.Ai;
-using CINE.Translate.Core;
+using Rcinel.Translate.Ai;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Cli;
+namespace Rcinel.Translate.Cli;
 
 /// <summary>
 /// The rcinel command. Hand-rolled argument parsing: nine small commands don't justify a
@@ -119,7 +119,7 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
     }
     TranslationProject project = TranslationProject.Create(folder, settings);
     output.WriteLine($"Created {project.ProjectFile}.");
-    output.WriteLine($"Ship the folder {project.TranslationsDirectory} with the app, then write texts as Rcinel.Translate(\"\", \"English text\") and run `rcinel scan --assign`.");
+    output.WriteLine($"Ship the folder {project.TranslationsDirectory} with the app, then write texts as Translate(\"\", \"English text\") (C#, with `using static Rcinel.Translate.Rcinel;`) or Rcinel.translate(\"\", \"English text\") (Java, JavaScript) and run `rcinel scan --assign`.");
     return Ok;
   }
 

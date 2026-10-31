@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text.RegularExpressions;
-using CINE.Translate.Core;
+using Rcinel.Translate.Core;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace CINE.Translate.Editor.Tests;
+namespace Rcinel.Translate.Editor.Tests;
 
 /// <summary>The real editor in memory, on a temp project and a temp data folder.</summary>
 public sealed class EditorFactory : WebApplicationFactory<Program>

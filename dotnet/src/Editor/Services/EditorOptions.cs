@@ -1,4 +1,4 @@
-namespace CINE.Translate.Editor.Services;
+namespace Rcinel.Translate.Editor.Services;
 
 /// <summary>The "Rcinel" configuration section. Environment variables use Rcinel__Project and so on.</summary>
 public sealed class EditorOptions

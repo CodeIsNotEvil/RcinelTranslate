@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 public enum IssueSeverity
 {

@@ -3,7 +3,7 @@ using Anthropic;
 using Anthropic.Exceptions;
 using Anthropic.Models.Beta.Messages;
 
-namespace CINE.Translate.Ai;
+namespace Rcinel.Translate.Ai;
 
 /// <summary>Something translates batches. The editor's tests swap in a fake; the real one is <see cref="ClaudeTranslator"/>.</summary>
 public interface ITranslator

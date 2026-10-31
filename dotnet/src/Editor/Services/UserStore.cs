@@ -5,7 +5,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
-namespace CINE.Translate.Editor.Services;
+namespace Rcinel.Translate.Editor.Services;
 
 public static class Roles
 {

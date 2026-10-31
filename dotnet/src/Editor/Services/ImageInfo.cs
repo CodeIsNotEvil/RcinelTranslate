@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
 
-namespace CINE.Translate.Editor.Services;
+namespace Rcinel.Translate.Editor.Services;
 
 /// <summary>
 /// Reads width and height from the header of PNG, JPEG, WebP and GIF files. The AI prompt turns

@@ -4,7 +4,7 @@ Translations for apps, keyed by UUIDv7, for C#, Java and JavaScript. You write t
 it's used:
 
 ```csharp
-saveButton.Text = Rcinel.Translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");
+saveButton.Text = Translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");   // using static Rcinel.Translate.Rcinel;
 ```
 
 ```java
@@ -24,7 +24,7 @@ Around that one call there is:
 - **Plain JSON files**, one per language, in the key-value format i18next, Crowdin, Lokalise and
   Weblate already read. Sorted by id, and since a UUIDv7 starts with its creation time, new strings
   always land at the end: a release's translations show up as one block in the diff.
-- **`rcinel`**, a command-line tool: it collects the `Rcinel.Translate` calls from your code (and
+- **`rcinel`**, a command-line tool: it collects the translate calls from your code (and
   fills in ids for you), shows how far each language is, checks the files in CI and exports them.
 - **A web editor** for translators: AI drafts every missing translation (with Claude), people
   confirm or correct them, and screenshots of the app show each text in place with a live preview of
@@ -38,7 +38,7 @@ Around that one call there is:
 
 ```
 your app's repository
-├── src/                              Rcinel.Translate("id", "English text") calls
+├── src/                              Translate("id", "English text") calls
 └── i18n/
     ├── rcinel.json                   the project: languages, code folders, AI settings
     ├── translations/   ← ship this   en.json (from `rcinel scan`), de.json, fr.json, ...
@@ -46,7 +46,8 @@ your app's repository
     └── context/                      notes and screenshots for translators
 ```
 
-1. Write `Rcinel.Translate("", "English text")` in the code.
+1. Write `Translate("", "English text")` (C#) or `Rcinel.translate("", "English text")` (Java,
+   JavaScript) in the code.
 2. `rcinel scan --assign` gives every new call its id (in your code) and writes the English texts to
    `translations/en.json`.
 3. In the editor, start "Draft with AI" for each language. Translators go through the drafts,
@@ -71,16 +72,22 @@ dotnet add package Rcinel.Translate
 ```
 
 ```csharp
-using CINE.Translate;
+using static Rcinel.Translate.Rcinel;
 
-// Reads translations/<language>.json next to the app (Rcinel.Directory).
-Rcinel.TryLoad(CultureInfo.CurrentUICulture.Name);
+// Reads translations/<language>.json next to the app.
+TryLoad(CultureInfo.CurrentUICulture.Name);
 
-title.Text = Rcinel.Translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings");
-toast.Text = Rcinel.Translate("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", count);
+title.Text = Translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings");
+toast.Text = Translate("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", count);
 
-Rcinel.LanguageChanged += (_, _) => RefreshTexts();
+LanguageChanged += (_, _) => RefreshTexts();
 ```
+
+The namespace is `Rcinel.Translate`, and the class with the static methods is `Rcinel` in it. Import
+the class with `using static` as above and call its methods without a prefix: an app can't write
+`Rcinel.Translate(...)`, because C# reads `Rcinel` there as the namespace. Where a bare name is
+ambiguous, the full name works: `Rcinel.Translate.Rcinel.Directory = ...` sets the folder the files
+are read from.
 
 Ship the files by copying the project's translations folder into the output:
 
@@ -90,7 +97,7 @@ Ship the files by copying the project's translations folder into the output:
 </ItemGroup>
 ```
 
-Or embed them and use `TranslationSet.FromStream`, then `Rcinel.Use(set)`.
+Or embed them and use `TranslationSet.FromStream`, then `Use(set)`.
 
 ### Java and Android
 
@@ -160,8 +167,10 @@ de        ###----...  35%      5         1        3
 fr        -.........   0%      2         0       12
 ```
 
-The scanner reads `Rcinel.Translate(...)` (C#) and `Rcinel.translate(...)` (Java, Kotlin, JavaScript,
-TypeScript) calls whose id and text are plain string literals. Anything it can't read, such as a
+The scanner reads `Translate(...)` (C#) and `Rcinel.translate(...)` (Java, Kotlin, JavaScript,
+TypeScript) calls whose id and text are plain string literals. Since other code has methods called
+`Translate` too, a bare `Translate(...)` only counts when its first argument is `""` or a UUID; the
+others are left alone. Anything it can't read, such as a
 variable, `$"..."` or a template literal with `${}`, it reports, because a text the scanner can't
 see can't be translated. If you wrap the call, add your wrapper's name to `functions` in
 `rcinel.json`.

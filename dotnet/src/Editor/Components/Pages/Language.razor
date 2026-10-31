@@ -453,7 +453,7 @@ else
       editText = await Jobs.SuggestAsync(Code, selected.Id, CancellationToken.None);
       OnEdit();
     }
-    catch (CINE.Translate.Ai.TranslationException e)
+    catch (global::Rcinel.Translate.Ai.TranslationException e)
     {
       suggestError = e.Message;
     }

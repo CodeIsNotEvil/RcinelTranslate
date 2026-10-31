@@ -75,11 +75,13 @@ Formatting comes from `.editorconfig`: two spaces (four in Java and Gradle scrip
 without BOM. C# uses file-scoped namespaces and primary constructors; Java is plain Java 8 (no
 `var`, no `List.of`); JavaScript is modern ESM.
 
-Every .NET project's namespace starts with `CINE.` (the owner's rule for all of their .NET code), set once
-in `dotnet/Directory.Build.props`. Here the `Rcinel.` prefix of the project name is *replaced* by
-`CINE.` (`Rcinel.Translate.Core` becomes `CINE.Translate.Core`). A `CINE.Rcinel` namespace would
-shadow the `Rcinel` class in every app that lives under `CINE` itself. Package and assembly names
-are `Rcinel.Translate.*`, which is what NuGet users see.
+Namespaces are the project names, `Rcinel.Translate.*` (the owner's choice for this repository; it
+departs from MyMonoRepo's `CINE` root namespace, and decision 0008 is still to be revised by the
+owner). Because the root namespace is called `Rcinel`, apps can't write `Rcinel.Translate(...)`: C#
+binds `Rcinel` to the namespace. Apps write `using static Rcinel.Translate.Rcinel;` and call
+`Translate(...)`, and that is the C# call `rcinel scan` collects. Inside this repository's own
+namespaces `Rcinel` means the class, but a qualified name that starts with `Rcinel.` then fails too:
+write `global::Rcinel.Translate....` there (Razor's `_Imports.razor` does).
 
 Build file-system paths with the platform's path API, never by joining strings with `/` or `\`:
 `Path.Combine` in C#, `Path.resolve` in Java, `path.join` in Node, `pathlib` in Python. Forward

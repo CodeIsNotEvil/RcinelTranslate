@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 /// <summary>A Rcinel.Translate call found in the code.</summary>
 public sealed record SourceString(string Id, string Text, string File, int Line);
@@ -32,7 +32,8 @@ public sealed class ScanResult
 public sealed record SourceUpdate(int Added, int Changed, int Removed);
 
 /// <summary>
-/// Collects Rcinel.Translate("id", "text") calls from C#, Java, Kotlin and JavaScript/TypeScript
+/// Collects Translate("id", "text") calls (C#) and Rcinel.translate("id", "text") calls (Java, Kotlin,
+/// JavaScript/TypeScript)
 /// files, like xgettext does for gettext. The code is the source of truth for the source texts; the
 /// source file is generated from it, which is why the editor doesn't let anyone edit English.
 /// </summary>
@@ -60,7 +61,7 @@ public static class SourceScanner
   /// <summary>
   /// Scans <paramref name="roots"/> (folders or single files). With <paramref name="assignIds"/>,
   /// calls with an empty id ("") get a new UUIDv7 written into the file, so a developer can write
-  /// <c>Rcinel.Translate("", "Save")</c> and let the scan fill the id in.
+  /// <c>Translate("", "Save")</c> and let the scan fill the id in.
   /// </summary>
   public static ScanResult Scan(IReadOnlyList<string> roots, IReadOnlyList<string> functions, bool assignIds = false)
   {
@@ -145,16 +146,41 @@ public static class SourceScanner
       .Select(f => string.Join(@"\s*\.\s*", f.Trim().Split('.').Select(Regex.Escape))));
 
   private static Regex CallPattern(IReadOnlyList<string> functions) => new(
-    // (?<![\w.]) so "MyRcinel.Translate" or "x.Rcinel.Translate" in another API don't count, but
-    // "CINE.Translate.Rcinel.Translate" would need the full name in functions.
+    // (?<![\w.]) so "MyRcinel.translate", "x.Rcinel.translate" or "foo.Translate" in another API
+    // don't count.
     @"(?<![\w.])(?:" + FunctionAlternatives(functions) + @")\s*\(\s*"
     + @"(?<q1>[""'`])(?<id>[^""'`\\\r\n]*)\k<q1>\s*,\s*"
     + @"(?<q2>[""'`])(?<text>(?:\\.|(?!\k<q2>)[^\\])*?)\k<q2>\s*(?<end>[,)])",
     RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
   private static Regex AnyCallPattern(IReadOnlyList<string> functions) => new(
-    @"(?<![\w.])(?:" + FunctionAlternatives(functions) + @")\s*\(",
+    @"(?<![\w.])(?:" + FunctionAlternatives(functions) + @")\s*\(\s*(?<first>(?<fq>[""'`])[^""'`\r\n]*\k<fq>)?",
     RegexOptions.CultureInvariant);
+
+  // Shaped like a UUID in any case: an id meant for us, even if it's written wrongly.
+  private static readonly Regex UuidLike = new(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", RegexOptions.CultureInvariant);
+
+  /// <summary>
+  /// C#'s call is a bare Translate(...) (Rcinel.Translate can't compile, see Directory.Build.props),
+  /// and plenty of other code has a method of that name. A bare call only counts as ours when its
+  /// first argument is "" or shaped like a UUID; anything else is somebody else's Translate and is
+  /// left alone instead of failing the scan.
+  /// </summary>
+  private static bool IsOurs(string matched, string firstLiteral)
+  {
+    string name = matched.Substring(0, matched.IndexOf('('));
+    if (name.Contains('.'))
+    {
+      return true;
+    }
+    if (firstLiteral.Length < 2)
+    {
+      return false;
+    }
+    string id = firstLiteral.Substring(1, firstLiteral.Length - 2);
+    return id.Length == 0 || UuidLike.IsMatch(id);
+  }
 
   private static void ScanFile(string file, Regex call, Regex anyCall, bool assignIds, ScanResult result)
   {
@@ -170,6 +196,10 @@ public static class SourceScanner
     foreach (Match m in call.Matches(content))
     {
       matchedStarts.Add(m.Index);
+      if (!IsOurs(m.Value, m.Groups["q1"].Value + m.Groups["id"].Value + m.Groups["q1"].Value))
+      {
+        continue;
+      }
       int line = LineOf(content, m.Index);
       string quote = m.Groups["q2"].Value;
       string raw = m.Groups["text"].Value;
@@ -216,7 +246,7 @@ public static class SourceScanner
     }
     foreach (Match m in anyCall.Matches(content))
     {
-      if (!matchedStarts.Contains(m.Index))
+      if (!matchedStarts.Contains(m.Index) && IsOurs(m.Value, m.Groups["first"].Value))
       {
         result.Issues.Add(new ScanIssue(false, file, LineOf(content, m.Index),
           "a translate call whose id and text aren't both plain string literals; the scanner can't read it, so it won't be translated"));

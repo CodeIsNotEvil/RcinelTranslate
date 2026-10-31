@@ -2,12 +2,18 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace CINE.Translate;
+namespace Rcinel.Translate;
 
 /// <summary>
 /// The app-wide entry point. Load a language once at start (and again when the user picks another),
-/// then write every UI text as <c>Rcinel.Translate("UUIDv7", "English text")</c>.
+/// then write every UI text as <c>Translate("UUIDv7", "English text")</c> after
+/// <c>using static Rcinel.Translate.Rcinel;</c>.
 /// </summary>
+/// <remarks>
+/// <c>Rcinel.Translate(...)</c> doesn't compile in apps: the root namespace is also called Rcinel,
+/// and C# finds the namespace before this class. The <c>using static</c> import avoids that, and
+/// <c>rcinel scan</c> looks for the bare <c>Translate(...)</c> call.
+/// </remarks>
 /// <remarks>
 /// The English text in the call is the source of truth and the fallback: `rcinel scan` collects
 /// the calls into the source file, and an id that has no translation (yet) simply shows the English

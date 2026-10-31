@@ -1,8 +1,8 @@
-using CINE.Translate.Ai;
-using CINE.Translate.Core;
+using Rcinel.Translate.Ai;
+using Rcinel.Translate.Core;
 using Microsoft.Extensions.Options;
 
-namespace CINE.Translate.Editor.Services;
+namespace Rcinel.Translate.Editor.Services;
 
 /// <summary>
 /// The one project the editor works on, shared by every user. All access goes through

@@ -1,6 +1,6 @@
-using CINE.Translate.Core;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Ai;
+namespace Rcinel.Translate.Ai;
 
 /// <summary>One string to translate, with everything a translator would want to know about it.</summary>
 /// <param name="Previous">The translation made for an older source text, when the string is stale.</param>

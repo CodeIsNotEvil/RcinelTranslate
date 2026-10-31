@@ -103,7 +103,7 @@ translation must contain the same placeholders as the source, in any order; `rci
 reports translations that lost or invented one, and the editor won't confirm them.
 
 The clients leave placeholders alone, except for the convenience overloads: C#'s
-`Rcinel.Translate(id, english, args)` runs `string.Format`, Java's fills `{0}`, `{1}`, ... and
+`Translate(id, english, args)` runs `string.Format`, Java's fills `{0}`, `{1}`, ... and
 JavaScript's fills `{0}` from an array or `{name}` from an object.
 
 ## The project file
@@ -117,7 +117,7 @@ JavaScript's fills `{0}` from an array or `{name}` from an object.
   "sourceLanguage": "en",
   "translations": "translations",
   "sources": ["../src", "../web"],
-  "functions": ["Rcinel.Translate", "Rcinel.translate"],
+  "functions": ["Translate", "Rcinel.translate"],
   "languages": [
     { "code": "de", "name": "Deutsch", "instructions": "Address the user informally (du)." }
   ],

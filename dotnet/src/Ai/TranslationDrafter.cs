@@ -1,6 +1,6 @@
-using CINE.Translate.Core;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Ai;
+namespace Rcinel.Translate.Ai;
 
 /// <summary>
 /// How the drafter reaches the project. The editor implements it with its lock (other users edit

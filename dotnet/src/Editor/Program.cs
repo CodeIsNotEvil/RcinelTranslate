@@ -1,6 +1,6 @@
-using CINE.Translate.Ai;
-using CINE.Translate.Editor.Components;
-using CINE.Translate.Editor.Services;
+using Rcinel.Translate.Ai;
+using Rcinel.Translate.Editor.Components;
+using Rcinel.Translate.Editor.Services;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 /// <summary>rcinel.json: what the project is and where its files live (docs/format.md, "The project file").</summary>
 public sealed class ProjectSettings
@@ -24,10 +24,11 @@ public sealed class ProjectSettings
   public List<string> Sources { get; set; } = [];
 
   /// <summary>
-  /// The calls `rcinel scan` looks for. The default covers C# (Rcinel.Translate) and Java and
-  /// JavaScript (Rcinel.translate). Add more if the app wraps the call, for example "T".
+  /// The calls `rcinel scan` looks for. The default covers C# (Translate, after
+  /// `using static Rcinel.Translate.Rcinel;`) and Java and JavaScript (Rcinel.translate). Add more if
+  /// the app wraps the call, for example "T".
   /// </summary>
-  public List<string> Functions { get; set; } = ["Rcinel.Translate", "Rcinel.translate"];
+  public List<string> Functions { get; set; } = ["Translate", "Rcinel.translate"];
 
   /// <summary>The target languages, in the order the editor lists them.</summary>
   public List<LanguageSettings> Languages { get; set; } = [];

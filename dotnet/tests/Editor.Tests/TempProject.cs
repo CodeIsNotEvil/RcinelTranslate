@@ -1,6 +1,6 @@
-using CINE.Translate.Core;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Editor.Tests;
+namespace Rcinel.Translate.Editor.Tests;
 
 /// <summary>A project in a fresh temp folder, deleted again after the test.</summary>
 public sealed class TempProject : IDisposable

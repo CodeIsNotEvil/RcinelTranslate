@@ -1,11 +1,14 @@
 using System.Globalization;
 
-namespace CINE.Translate.Tests;
+namespace Rcinel.Translate.Tests;
 
-// Rcinel is static, so these tests share its state; xUnit runs a class's tests one after another,
-// and this is the only class that touches it.
+// Rcinel is static, so every test class that touches it joins this collection; xUnit runs the
+// tests of one collection one after another.
+[Collection(StaticState)]
 public class RcinelTests : IDisposable
 {
+  public const string StaticState = "Rcinel's static state";
+
   private static readonly string Translations = Path.Combine(AppContext.BaseDirectory, "fixtures", "translations");
   private const string Save = "0192f3a0-1c4e-7a10-8000-000000000001";
   private const string Greeting = "0192f3a0-1c4e-7a10-8000-000000000003";

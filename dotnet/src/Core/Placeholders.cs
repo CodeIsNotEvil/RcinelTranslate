@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace CINE.Translate.Core;
+namespace Rcinel.Translate.Core;
 
 /// <summary>
 /// Finds the parts of a text that the app fills in or interprets: {0}, {name}, {{name}}, printf-style

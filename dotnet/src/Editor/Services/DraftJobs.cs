@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using CINE.Translate.Ai;
+using Rcinel.Translate.Ai;
 
-namespace CINE.Translate.Editor.Services;
+namespace Rcinel.Translate.Editor.Services;
 
 /// <summary>A running or finished AI run for one language.</summary>
 public sealed class DraftJob(string language, string startedBy)

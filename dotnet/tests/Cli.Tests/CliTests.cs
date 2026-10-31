@@ -1,7 +1,7 @@
 using System.Text.Json;
-using CINE.Translate.Core;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Cli.Tests;
+namespace Rcinel.Translate.Cli.Tests;
 
 /// <summary>The whole flow a developer goes through, in a temp folder: init, write code, scan, check, export.</summary>
 public sealed class CliTests : IDisposable
@@ -29,7 +29,7 @@ public sealed class CliTests : IDisposable
     Assert.Equal(Cli.Ok, Run("init", I18n, "--name", "Demo", "--languages", "de,fr"));
     string code = Path.Combine(root, "src", "Page.cs");
     Directory.CreateDirectory(Path.GetDirectoryName(code)!);
-    File.WriteAllText(code, "a = Rcinel.Translate(\"\", \"Save\");\nb = Rcinel.Translate(\"\", \"Hello {name}\");\n");
+    File.WriteAllText(code, "a = Translate(\"\", \"Save\");\nb = Translate(\"\", \"Hello {name}\");\n");
 
     // Without --assign the empty ids are errors and nothing is written.
     Assert.Equal(Cli.Failed, Run("scan", "--project", I18n));

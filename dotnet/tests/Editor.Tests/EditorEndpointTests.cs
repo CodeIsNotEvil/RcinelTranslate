@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace CINE.Translate.Editor.Tests;
+namespace Rcinel.Translate.Editor.Tests;
 
 public sealed class EditorEndpointTests(EditorFactory factory) : IClassFixture<EditorFactory>
 {

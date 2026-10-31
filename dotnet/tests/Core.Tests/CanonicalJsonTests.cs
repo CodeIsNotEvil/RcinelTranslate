@@ -1,6 +1,6 @@
-using CINE.Translate.Core;
+using Rcinel.Translate.Core;
 
-namespace CINE.Translate.Core.Tests;
+namespace Rcinel.Translate.Core.Tests;
 
 public class CanonicalJsonTests
 {
