@@ -1,0 +1,8 @@
+# LF everywhere, so translation files diff the same on Windows and the canonical-form check passes.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.webp binary
+*.gif binary
+*.jar binary

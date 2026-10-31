@@ -55,3 +55,21 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Not part of the GitHub template: the other clients, the editor and the local tools.
+# Java / Gradle
+.gradle/
+java/build/
+# JavaScript
+node_modules/
+# Editor data (users, sign-in keys) when run locally from the source tree
+dotnet/src/Editor/data/
+# Leftovers of atomic writes that were interrupted
+*.json.tmp
+# IDEs
+.idea/
+.vs/
+.vscode/
+*.user
+# Environment for compose
+.env

@@ -1,0 +1,31 @@
+---
+tags: [project]
+created: 2026-10-31
+updated: 2026-10-31
+status: active
+---
+# RcinelTranslate
+
+A translation library the owner wants to publish: `Rcinel.Translate("UUIDv7", "English text")` in
+C#, Java and JavaScript, plain JSON files shipped with the app, the `rcinel` tool, and a web editor
+where AI drafts and people confirm. Version 0.1.0, not released yet.
+
+## Open questions for the owner
+- Package coordinates: NuGet `Rcinel.Translate*`, Maven `io.github.codeisnotevil:rcinel-translate`
+  (Maven Central needs the `io.github.codeisnotevil` namespace verified), npm `rcinel-translate`
+  (unscoped; a scope needs an npm org). Fine, or other names?
+- Publishing: no release workflow yet. It needs NuGet, Maven Central (with signing) and npm
+  credentials as repository secrets.
+- Should drafts ship? Today `translations/` holds drafts too, and `rcinel export --confirmed-only`
+  is the way to ship only reviewed text. The alternative is keeping drafts in `review/` until
+  confirmed.
+
+## Next steps
+- Release workflow (packages for the three clients, the editor image on GHCR, the CLI as a tool).
+- Plural forms: today a text is one string; ICU MessageFormat or per-count keys would need a format
+  change ([[0002-flat-key-value-json]]).
+- The scanner reads string literals only; C# raw strings (`"""`) and Kotlin raw strings aren't read.
+- Preview: font weight isn't sampled, so bold texts preview in regular weight.
+- Editor: per-language permissions for translators, and an export/import for external agencies.
+
+Related: [[index]]
