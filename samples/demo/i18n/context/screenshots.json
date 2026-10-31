@@ -1,0 +1,23 @@
+{
+  "01a192e4-0000-7000-8000-5c4ee05e0001": {
+    "file": "01a192e4-0000-7000-8000-5c4ee05e0001.png",
+    "title": "Settings",
+    "width": 1280,
+    "height": 800,
+    "regions": [
+      { "key": "01a192e3-5bcc-7000-a8d2-327b1cb0f737", "x": 0.2453, "y": 0.0488, "width": 0.1525, "height": 0.0462, "align": "left", "background": "#eef1f6", "color": "#1d2433", "fontSize": 0.0375 },
+      { "key": "01a192e3-5bd3-7000-a5f3-da9468077405", "x": 0.2656, "y": 0.1862, "width": 0.1305, "height": 0.0288, "align": "left", "background": "#ffffff", "color": "#1d2433", "fontSize": 0.0225 },
+      { "key": "01a192e3-5bd4-7000-8e32-166cb3e992e1", "x": 0.2656, "y": 0.23, "width": 0.0964, "height": 0.0262, "align": "left", "background": "#ffffff", "color": "#1d2433", "fontSize": 0.02 },
+      { "key": "01a192e3-5bd4-7001-9444-865b7a85eec0", "x": 0.2656, "y": 0.2537, "width": 0.1878, "height": 0.0213, "align": "left", "background": "#ffffff", "color": "#6b7385", "fontSize": 0.0163 },
+      { "key": "01a192e3-5bd4-7002-8729-40f06f1ec387", "x": 0.2656, "y": 0.2919, "width": 0.0864, "height": 0.0262, "align": "left", "background": "#ffffff", "color": "#1d2433", "fontSize": 0.02 },
+      { "key": "01a192e3-5bd4-7003-8ffa-11184e6d893e", "x": 0.2656, "y": 0.415, "width": 0.1392, "height": 0.0288, "align": "left", "background": "#ffffff", "color": "#1d2433", "fontSize": 0.0225 },
+      { "key": "01a192e3-5bd4-7004-9bce-eb810c64ab20", "x": 0.2656, "y": 0.4619, "width": 0.4091, "height": 0.0262, "align": "left", "background": "#ffffff", "color": "#1d2433", "fontSize": 0.02 },
+      { "key": "01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "x": 0.6759, "y": 0.5575, "width": 0.0694, "height": 0.045, "align": "center", "background": "#3d6be0", "color": "#ffffff", "fontSize": 0.0187 },
+      { "key": "01a192e3-5bd4-7006-8fab-925a6177e082", "x": 0.5805, "y": 0.5575, "width": 0.0828, "height": 0.045, "align": "center", "background": "#ffffff", "color": "#3d6be0", "fontSize": 0.0187 },
+      { "key": "01a192e3-5bd4-7007-bb84-212f497c373e", "x": 0.2484, "y": 0.9025, "width": 0.1132, "height": 0.0375, "align": "center", "background": "#1f9d61", "color": "#ffffff", "fontSize": 0.0175 },
+      { "key": "01a192e3-5bd4-7008-9a54-036fafe0c7af", "x": 0.2453, "y": 0.1, "width": 0.1796, "height": 0.0262, "align": "left", "background": "#eef1f6", "color": "#5b6476", "fontSize": 0.02 },
+      { "key": "01a192e3-5bd9-7000-bfa7-a2e174cf19d8", "x": 0.0187, "y": 0.1013, "width": 0.1656, "height": 0.0425, "align": "left", "background": "#2c3a5c", "color": "#9fb0d3", "fontSize": 0.0187 },
+      { "key": "01a192e3-5bd9-7001-b370-5f9abad293a1", "x": 0.0187, "y": 0.1713, "width": 0.1656, "height": 0.0425, "align": "center", "background": "#ffb648", "color": "#3b2500", "fontSize": 0.0187 }
+    ]
+  }
+}

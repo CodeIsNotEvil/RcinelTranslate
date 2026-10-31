@@ -1,0 +1,33 @@
+@* Confirmed, draft, outdated and missing as one stacked bar. Widths are shares of all strings. *@
+<div class="progress" role="img" aria-label="@Label">
+  @if (Progress is { Total: > 0 } p)
+  {
+    <span class="seg confirmed" style="width:@Share(p.Confirmed)"></span>
+    <span class="seg draft" style="width:@Share(p.Draft)"></span>
+    <span class="seg stale" style="width:@Share(p.Stale)"></span>
+  }
+</div>
+@if (ShowLegend && Progress is { } q)
+{
+  <div class="legend">
+    <span><i class="dot confirmed"></i>@q.Confirmed confirmed</span>
+    <span><i class="dot draft"></i>@q.Draft draft</span>
+    <span><i class="dot stale"></i>@q.Stale outdated</span>
+    <span><i class="dot missing"></i>@q.Missing missing</span>
+  </div>
+}
+
+@code {
+  [Parameter, EditorRequired]
+  public LanguageProgress? Progress { get; set; }
+
+  [Parameter]
+  public bool ShowLegend { get; set; }
+
+  private string Label => Progress is { } p
+    ? $"{p.ConfirmedPercent}% confirmed, {p.TranslatedPercent}% translated"
+    : "";
+
+  private string Share(int count) =>
+    (count * 100.0 / Progress!.Total).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + "%";
+}

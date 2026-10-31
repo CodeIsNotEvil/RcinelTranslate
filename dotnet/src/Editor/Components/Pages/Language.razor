@@ -1,0 +1,505 @@
+@page "/languages/{Code}"
+@implements IDisposable
+@inject ProjectStore Store
+@inject DraftJobs Jobs
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>@title · RcinelTranslate</PageTitle>
+
+@if (!found)
+{
+  <div class="page">
+    <h1>No such language</h1>
+    <p>The project has no language "@Code". <a href="">Back to the overview</a>.</p>
+  </div>
+}
+else
+{
+  <div class="page wide">
+    <header class="page-head">
+      <div class="grow">
+        <h1>@title</h1>
+        <ProgressBar Progress="progress" ShowLegend="true" />
+      </div>
+      <div class="actions">
+        @if (job is { Finished: false })
+        {
+          <div class="job">
+            <progress max="@Math.Max(1, job.Progress.Total)" value="@job.Progress.Done"></progress>
+            <span>AI: @job.Progress.Done / @job.Progress.Total</span>
+            <button class="ghost small" @onclick="job.Cancel">Stop</button>
+          </div>
+        }
+        else if (Jobs.IsConfigured && openCount > 0)
+        {
+          <button @onclick="DraftAll" title="Drafts missing and outdated strings in the background; you review them here">Draft @openCount open with AI</button>
+        }
+      </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(instructions))
+    {
+      <p class="notice small"><strong>Style for this language:</strong> @instructions</p>
+    }
+    @if (job is { Finished: true, Progress.Problems.Count: > 0 })
+    {
+      <details class="notice small">
+        <summary>The last AI run had @job.Progress.Problems.Count problem(s)</summary>
+        <ul>
+          @foreach (string problem in job.Progress.Problems.Take(20))
+          {
+            <li>@problem</li>
+          }
+        </ul>
+      </details>
+    }
+
+    <div class="toolbar">
+      <div class="tabs" role="tablist">
+        @foreach ((Filter f, string label) in FilterLabels)
+        {
+          <button role="tab" class="tab @(filter == f ? "active" : "")" aria-selected="@(filter == f)" @onclick="() => SetFilter(f)">
+            @label <span class="count">@Count(f)</span>
+          </button>
+        }
+      </div>
+      <input class="search" type="search" placeholder="Search text, translation, note or id" @bind="search" @bind:event="oninput" />
+    </div>
+
+    <div class="editor-grid">
+      <ul class="string-list" aria-label="Strings">
+        @{
+          List<Row> visible = Visible().ToList();
+        }
+        @if (visible.Count == 0)
+        {
+          <li class="empty">@(filter == Filter.Open ? "Nothing open. Every string is confirmed." : "No strings match.")</li>
+        }
+        @foreach (Row row in visible.Take(shown))
+        {
+          <li>
+            <button class="string-row @(row.Id == selectedId ? "selected" : "")" @onclick="() => Select(row.Id)">
+              <span class="dot @row.State.ToString().ToLowerInvariant()" title="@Views.StateName(row.State)"></span>
+              <span class="texts">
+                <span class="source">@row.Source</span>
+                <span class="translation @(row.Translation is null ? "none" : "")">@(row.Translation ?? "Not translated")</span>
+              </span>
+              @if (row.HasScreenshot)
+              {
+                <span class="icon" title="On a screenshot">▣</span>
+              }
+            </button>
+          </li>
+        }
+        @if (visible.Count > shown)
+        {
+          <li><button class="ghost full" @onclick="() => shown += PageSize">Show @Math.Min(PageSize, visible.Count - shown) more of @(visible.Count - shown)</button></li>
+        }
+      </ul>
+
+      <section class="detail">
+        @if (selected is null)
+        {
+          <p class="muted">Pick a string on the left.</p>
+        }
+        else
+        {
+          <div class="detail-head">
+            <StateBadge State="selected.State" />
+            <code class="id" title="Created @Views.Created(selected.Id)">@selected.Id</code>
+            <button class="ghost small" @onclick="CopyId" title="Copy the id">Copy</button>
+          </div>
+
+          <label class="field-label">@sourceLanguage</label>
+          <div class="source-text">@selected.Source</div>
+
+          @if (selected.State == TranslationState.Stale && review is not null)
+          {
+            <p class="notice small">The source text changed after @review.By reviewed this translation on @review.At.ToString("yyyy-MM-dd"). Check that it still fits.</p>
+          }
+
+          <label class="field-label" for="translation">@title</label>
+          <textarea id="translation" class="translation-input" rows="@Rows(editText)" @bind="editText" @bind:event="oninput" @bind:after="OnEdit" @onkeydown="OnKeyDown" spellcheck="true" lang="@Code"></textarea>
+          @if (placeholderProblem is not null)
+          {
+            <p class="error-box small">Placeholders: @placeholderProblem. The app fills these in, so the translation must keep them.</p>
+          }
+          @if (suggestError is not null)
+          {
+            <p class="error-box small">@suggestError</p>
+          }
+
+          <div class="actions">
+            <button class="primary" @onclick="Confirm" disabled="@(placeholderProblem is not null || editText.Length == 0 && selected.Source.Length > 0)" title="Ctrl+Enter">Confirm</button>
+            <button @onclick="SaveDraft" disabled="@(!dirty || editText.Length == 0)">Save as draft</button>
+            @if (Jobs.IsConfigured)
+            {
+              <button @onclick="Suggest" disabled="@suggesting">@(suggesting ? "Asking..." : "Suggest with AI")</button>
+            }
+            <button class="ghost" @onclick="() => { editText = selected.Source; OnEdit(); }" title="For texts that stay the same, such as OK or a brand name">Use source</button>
+            @if (dirty)
+            {
+              <button class="ghost" @onclick="Revert">Undo changes</button>
+            }
+            @if (selected.Translation is not null)
+            {
+              <button class="ghost danger" @onclick="Remove" title="The app shows the source text again">Remove</button>
+            }
+          </div>
+          <p class="muted small">
+            @if (review is not null)
+            {
+              <span>@(review.State == ReviewState.Confirmed ? "Confirmed" : "Drafted") by @review.By on @review.At.ToString("yyyy-MM-dd HH:mm") UTC. </span>
+            }
+            Ctrl+Enter confirms and opens the next open string.
+          </p>
+
+          <label class="field-label" for="note">Note for translators</label>
+          <div class="note-row">
+            <input id="note" @bind="noteText" placeholder="Where it appears, what it means: “verb, on the save button”" />
+            @if (noteText != (selected.Note ?? ""))
+            {
+              <button class="small" @onclick="SaveNote">Save note</button>
+            }
+          </div>
+
+          @if (shots.Count > 0)
+          {
+            <div class="preview-head">
+              <h2>Preview</h2>
+              <label class="toggle"><input type="checkbox" @bind="showOriginal" /> Original</label>
+            </div>
+            @foreach (ShotData shot in shots)
+            {
+              Dictionary<string, string> texts = new(shot.Texts) { [selected.Id] = editText };
+              <figure class="preview">
+                <ScreenshotPreview Shot="shot.Shot" Texts="texts" Sources="shot.Sources" Selected="@selected.Id" ShowOriginal="showOriginal" OnRegionClick="Select" />
+                <figcaption><a href="@($"screenshots/{shot.Shot.Id}?language={Code}")">@shot.Shot.Title</a> · a red outline means the text only fits smaller than the original</figcaption>
+              </figure>
+            }
+          }
+          else
+          {
+            <p class="muted small">This string isn't marked on a screenshot yet. Mark it on <a href="screenshots">Screenshots</a> to see a preview here and to give the AI the context.</p>
+          }
+        }
+      </section>
+    </div>
+  </div>
+}
+
+@code {
+  private enum Filter { Open, Missing, Draft, Stale, Confirmed, All }
+
+  private static readonly (Filter, string)[] FilterLabels =
+    [(Filter.Open, "To do"), (Filter.Missing, "Missing"), (Filter.Draft, "Draft"), (Filter.Stale, "Outdated"), (Filter.Confirmed, "Confirmed"), (Filter.All, "All")];
+
+  private const int PageSize = 200;
+
+  private sealed record Row(string Id, string Source, string? Translation, TranslationState State, string? Note, bool HasScreenshot);
+
+  private sealed record ShotData(Screenshot Shot, Dictionary<string, string> Texts, Dictionary<string, string> Sources);
+
+  [Parameter]
+  public string Code { get; set; } = "";
+
+  [SupplyParameterFromQuery(Name = "id")]
+  public string? QueryId { get; set; }
+
+  private bool found = true;
+  private string title = "";
+  private string instructions = "";
+  private string sourceLanguage = "";
+  private LanguageProgress? progress;
+  private List<Row> rows = [];
+  private int openCount;
+  private Filter filter = Filter.Open;
+  private string search = "";
+  private int shown = PageSize;
+  private string user = "";
+  private DraftJob? job;
+
+  private string? selectedId;
+  private Row? selected;
+  private ReviewEntry? review;
+  private List<ShotData> shots = [];
+  private string editText = "";
+  private string noteText = "";
+  private bool dirty;
+  private bool showOriginal;
+  private bool suggesting;
+  private string? suggestError;
+  private string? placeholderProblem;
+
+  protected override async Task OnInitializedAsync()
+  {
+    user = (await Auth.GetAuthenticationStateAsync()).User.Identity?.Name ?? "";
+    Store.Changed += OnChanged;
+    Jobs.Changed += OnJobChanged;
+  }
+
+  protected override void OnParametersSet()
+  {
+    selectedId = QueryId;
+    filter = QueryId is null ? Filter.Open : Filter.All;
+    shown = PageSize;
+    dirty = false;
+    Refresh();
+    if (selectedId is null)
+    {
+      selectedId = Visible().FirstOrDefault()?.Id;
+      LoadSelected();
+    }
+  }
+
+  private void Refresh()
+  {
+    if (!Store.EnsureLoaded())
+    {
+      return;
+    }
+    found = Store.Read(p => p.HasLanguage(Code));
+    if (!found)
+    {
+      return;
+    }
+    (title, instructions, sourceLanguage, progress, rows) = Store.Read(p =>
+    {
+      LanguageData data = p.GetLanguage(Code);
+      HashSet<string> onShots = [.. p.Screenshots.Values.SelectMany(s => s.Regions).Select(r => r.Key)];
+      List<Row> list = [.. p.Source.Select(s => new Row(
+        s.Key,
+        s.Value,
+        data.Texts.TryGetValue(s.Key, out string? t) ? t : null,
+        p.GetState(data, s.Key),
+        p.Notes.TryGetValue(s.Key, out string? n) ? n : null,
+        onShots.Contains(s.Key)))];
+      return (data.Settings.DisplayName, data.Settings.Instructions, p.Settings.SourceLanguage, p.GetProgress(Code), list);
+    });
+    openCount = rows.Count(r => r.State is TranslationState.Missing or TranslationState.Stale);
+    job = Jobs.Get(Code);
+    LoadSelected();
+  }
+
+  /// <summary>Loads the selected string's details. Keeps what the user typed if another user's save triggered the refresh.</summary>
+  private void LoadSelected()
+  {
+    Row? row = rows.FirstOrDefault(r => r.Id == selectedId);
+    bool sameString = selected?.Id == row?.Id;
+    selected = row;
+    if (row is null)
+    {
+      shots = [];
+      return;
+    }
+    (review, shots) = Store.Read(p =>
+    {
+      LanguageData data = p.GetLanguage(Code);
+      ReviewEntry? r = data.Review.TryGetValue(row.Id, out ReviewEntry? e) ? e : null;
+      List<ShotData> list = [.. p.ScreenshotsOf(row.Id).Select(s => new ShotData(Views.Copy(s), Views.RegionTexts(p, s, Code), Views.RegionSources(p, s)))];
+      return (r, list);
+    });
+    if (!(sameString && dirty))
+    {
+      editText = row.Translation ?? "";
+      noteText = row.Note ?? "";
+      dirty = false;
+      suggestError = null;
+    }
+    UpdatePlaceholders();
+  }
+
+  private IEnumerable<Row> Visible()
+  {
+    IEnumerable<Row> result = filter switch
+    {
+      Filter.Open => rows.Where(r => r.State != TranslationState.Confirmed),
+      Filter.Missing => rows.Where(r => r.State == TranslationState.Missing),
+      Filter.Draft => rows.Where(r => r.State == TranslationState.Draft),
+      Filter.Stale => rows.Where(r => r.State == TranslationState.Stale),
+      Filter.Confirmed => rows.Where(r => r.State == TranslationState.Confirmed),
+      _ => rows,
+    };
+    string term = search.Trim();
+    if (term.Length > 0)
+    {
+      result = result.Where(r => r.Source.Contains(term, StringComparison.CurrentCultureIgnoreCase)
+        || (r.Translation?.Contains(term, StringComparison.CurrentCultureIgnoreCase) ?? false)
+        || (r.Note?.Contains(term, StringComparison.CurrentCultureIgnoreCase) ?? false)
+        || r.Id.StartsWith(term, StringComparison.OrdinalIgnoreCase));
+    }
+    return result;
+  }
+
+  private int Count(Filter f) => f switch
+  {
+    Filter.Open => rows.Count(r => r.State != TranslationState.Confirmed),
+    Filter.Missing => rows.Count(r => r.State == TranslationState.Missing),
+    Filter.Draft => rows.Count(r => r.State == TranslationState.Draft),
+    Filter.Stale => rows.Count(r => r.State == TranslationState.Stale),
+    Filter.Confirmed => rows.Count(r => r.State == TranslationState.Confirmed),
+    _ => rows.Count,
+  };
+
+  private void SetFilter(Filter f)
+  {
+    filter = f;
+    shown = PageSize;
+  }
+
+  private void Select(string id)
+  {
+    if (id == selectedId)
+    {
+      return;
+    }
+    selectedId = id;
+    dirty = false;
+    LoadSelected();
+  }
+
+  private void OnEdit()
+  {
+    dirty = editText != (selected?.Translation ?? "");
+    UpdatePlaceholders();
+  }
+
+  private void UpdatePlaceholders() =>
+    placeholderProblem = selected is not null && editText.Length > 0 ? Placeholders.Compare(selected.Source, editText) : null;
+
+  private void Save(ReviewState state)
+  {
+    if (selected is null)
+    {
+      return;
+    }
+    string id = selected.Id;
+    string text = editText;
+    Store.Write(p => p.SetTranslation(Code, id, text, state, user, DateTimeOffset.UtcNow));
+    dirty = false;
+  }
+
+  private void Confirm()
+  {
+    if (selected is null || placeholderProblem is not null)
+    {
+      return;
+    }
+    string current = selected.Id;
+    // The next open string after this one, in list order: confirming walks through the work.
+    List<Row> open = [.. Visible()];
+    int index = open.FindIndex(r => r.Id == current);
+    Save(ReviewState.Confirmed);
+    Row? next = open.Skip(index + 1).FirstOrDefault(r => r.State != TranslationState.Confirmed)
+      ?? open.Take(Math.Max(0, index)).FirstOrDefault(r => r.State != TranslationState.Confirmed);
+    if (next is not null)
+    {
+      Select(next.Id);
+    }
+  }
+
+  private void SaveDraft() => Save(ReviewState.Draft);
+
+  private void Revert()
+  {
+    editText = selected?.Translation ?? "";
+    OnEdit();
+  }
+
+  private void Remove()
+  {
+    if (selected is null)
+    {
+      return;
+    }
+    string id = selected.Id;
+    Store.Write(p => p.RemoveTranslation(Code, id));
+    dirty = false;
+  }
+
+  private void SaveNote()
+  {
+    if (selected is null)
+    {
+      return;
+    }
+    string id = selected.Id;
+    string note = noteText.Trim();
+    Store.Write(p =>
+    {
+      if (note.Length == 0)
+      {
+        p.Notes.Remove(id);
+      }
+      else
+      {
+        p.Notes[id] = note;
+      }
+    });
+  }
+
+  private async Task Suggest()
+  {
+    if (selected is null)
+    {
+      return;
+    }
+    suggesting = true;
+    suggestError = null;
+    try
+    {
+      editText = await Jobs.SuggestAsync(Code, selected.Id, CancellationToken.None);
+      OnEdit();
+    }
+    catch (global::Rcinel.Translate.Ai.TranslationException e)
+    {
+      suggestError = e.Message;
+    }
+    finally
+    {
+      suggesting = false;
+    }
+  }
+
+  private void DraftAll() => job = Jobs.Start(Code, user) ?? job;
+
+  private async Task CopyId()
+  {
+    if (selected is not null)
+    {
+      await JS.InvokeVoidAsync("rcinel.copy", selected.Id);
+    }
+  }
+
+  private async Task OnKeyDown(KeyboardEventArgs e)
+  {
+    if (e.Key == "Enter" && (e.CtrlKey || e.MetaKey))
+    {
+      // @bind with oninput has the latest text already.
+      Confirm();
+      await JS.InvokeVoidAsync("rcinel.focus", "translation");
+    }
+  }
+
+  private static int Rows(string text) => Math.Clamp(text.Split('\n').Length + text.Length / 60, 2, 12);
+
+  private void OnChanged() => InvokeAsync(() =>
+  {
+    Refresh();
+    StateHasChanged();
+  });
+
+  private void OnJobChanged() => InvokeAsync(() =>
+  {
+    job = Jobs.Get(Code);
+    StateHasChanged();
+  });
+
+  public void Dispose()
+  {
+    Store.Changed -= OnChanged;
+    Jobs.Changed -= OnJobChanged;
+  }
+}

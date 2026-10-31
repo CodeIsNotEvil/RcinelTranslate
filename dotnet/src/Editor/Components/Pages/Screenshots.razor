@@ -1,0 +1,141 @@
+@page "/screenshots"
+@implements IDisposable
+@inject ProjectStore Store
+@inject NavigationManager Navigation
+
+<PageTitle>Screenshots · RcinelTranslate</PageTitle>
+
+<div class="page">
+  <header class="page-head">
+    <div>
+      <h1>Screenshots</h1>
+      <p class="muted">Screenshots of the app's screens. Mark where each string appears: translators then see it in place, the preview shows whether a translation fits, and the AI gets the screen as context.</p>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Add a screenshot</h2>
+    <form class="inline-form" @onsubmit="Upload">
+      <label>Title <input @bind="newTitle" placeholder="Settings page" required /></label>
+      <label>Image <InputFile OnChange="Picked" accept=".png,.jpg,.jpeg,.webp,.gif" /></label>
+      <button type="submit" class="primary" disabled="@(picked is null || uploading)">@(uploading ? "Uploading..." : "Add")</button>
+    </form>
+    <p class="muted small">PNG, JPEG, WebP or GIF up to @(MaxBytes / 1024 / 1024) MB. Take it at the size the app usually runs at; the AI sees images up to 5 MB.</p>
+    @if (error is not null)
+    {
+      <p class="error-box">@error</p>
+    }
+  </section>
+
+  @if (shots.Count == 0)
+  {
+    <p class="muted">No screenshots yet.</p>
+  }
+  <div class="shot-grid">
+    @foreach (ShotCard shot in shots)
+    {
+      <a class="card shot-card" href="@($"screenshots/{shot.Id}")">
+        <img src="@($"images/{Uri.EscapeDataString(shot.File)}")" alt="" loading="lazy" />
+        <strong>@shot.Title</strong>
+        <span class="muted small">@shot.Regions marked string(s)</span>
+      </a>
+    }
+  </div>
+</div>
+
+@code {
+  private const long MaxBytes = 10 * 1024 * 1024;
+
+  private sealed record ShotCard(string Id, string Title, string File, int Regions);
+
+  private List<ShotCard> shots = [];
+  private string newTitle = "";
+  private IBrowserFile? picked;
+  private bool uploading;
+  private string? error;
+
+  protected override void OnInitialized()
+  {
+    Store.Changed += OnChanged;
+    Refresh();
+  }
+
+  private void Refresh()
+  {
+    if (Store.EnsureLoaded())
+    {
+      shots = Store.Read(p => p.Screenshots.Values.Reverse().Select(s => new ShotCard(s.Id, s.Title, s.File, s.Regions.Count)).ToList());
+    }
+  }
+
+  private void Picked(InputFileChangeEventArgs e)
+  {
+    picked = e.File;
+    error = null;
+    if (string.IsNullOrWhiteSpace(newTitle))
+    {
+      newTitle = Path.GetFileNameWithoutExtension(e.File.Name);
+    }
+  }
+
+  private async Task Upload()
+  {
+    if (picked is null)
+    {
+      return;
+    }
+    string extension = Path.GetExtension(picked.Name).ToLowerInvariant();
+    if (!ImageInfo.Extensions.Contains(extension))
+    {
+      error = "Only PNG, JPEG, WebP and GIF images.";
+      return;
+    }
+    if (picked.Size > MaxBytes)
+    {
+      error = $"The image is larger than {MaxBytes / 1024 / 1024} MB.";
+      return;
+    }
+    uploading = true;
+    try
+    {
+      using MemoryStream buffer = new();
+      await using (Stream stream = picked.OpenReadStream(MaxBytes))
+      {
+        await stream.CopyToAsync(buffer);
+      }
+      byte[] bytes = buffer.ToArray();
+      if (ImageInfo.ReadSize(bytes) is not (int width, int height))
+      {
+        error = "That file doesn't look like an image.";
+        return;
+      }
+      // The id names the file as well, so two "screenshot.png" uploads never collide.
+      string id = UuidV7.New();
+      string file = id + (extension == ".jpeg" ? ".jpg" : extension);
+      string title = newTitle.Trim();
+      Store.Write(p =>
+      {
+        Directory.CreateDirectory(p.ScreenshotDirectory);
+        File.WriteAllBytes(Path.Combine(p.ScreenshotDirectory, file), bytes);
+        p.Screenshots[id] = new Screenshot { Id = id, File = file, Title = title, Width = width, Height = height };
+      });
+      Navigation.NavigateTo($"screenshots/{id}");
+    }
+    catch (IOException e)
+    {
+      error = e.Message;
+    }
+    finally
+    {
+      uploading = false;
+    }
+  }
+
+  private void OnChanged() => InvokeAsync(() =>
+  {
+    Refresh();
+    StateHasChanged();
+  });
+
+  public void Dispose() => Store.Changed -= OnChanged;
+}

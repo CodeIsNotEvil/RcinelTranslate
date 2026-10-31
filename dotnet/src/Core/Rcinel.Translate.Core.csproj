@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Everything around the shipped files: the project layout, review states, progress, the source
+    scanner and the checks. The CLI and the editor are thin layers over it, so a third tool (a build
+    task, an IDE plugin) only needs this package. netstandard2.0 like the client.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>Rcinel.Translate.Core</PackageId>
+    <AssemblyName>Rcinel.Translate.Core</AssemblyName>
+    <Description>Reads and writes RcinelTranslate projects: UUIDv7 keyed translation files, review states, progress, source scanning and checks.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Docs where they say something; self-explanatory properties don't need a summary. -->
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Only for reading the editor's own files (project, review, context). Translation files go
+         through the client's reader, so the checks see exactly what an app will see. -->
+    <PackageReference Include="System.Text.Json" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Translate\Rcinel.Translate.csproj" />
+    <InternalsVisibleTo Include="Rcinel.Translate.Core.Tests" />
+    <InternalsVisibleTo Include="Rcinel.Translate.Editor.Tests" />
+  </ItemGroup>
+
+</Project>

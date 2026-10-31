@@ -1,0 +1,318 @@
+@page "/screenshots/{Id}"
+@implements IAsyncDisposable
+@inject ProjectStore Store
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>@(shot?.Title ?? "Screenshot") · RcinelTranslate</PageTitle>
+
+@if (shot is null)
+{
+  <div class="page">
+    <h1>No such screenshot</h1>
+    <p><a href="screenshots">Back to the screenshots</a>.</p>
+  </div>
+}
+else
+{
+  <div class="page wide">
+    <header class="page-head">
+      <div class="grow">
+        <input class="title-input" value="@shot.Title" @onchange="Rename" aria-label="Title" />
+        <p class="muted small">@shot.Width × @shot.Height px · @shot.Regions.Count marked string(s)</p>
+      </div>
+      <div class="actions">
+        <label>
+          Show
+          <select @bind="language" @bind:after="Refresh">
+            <option value="">@sourceLanguage (source)</option>
+            @foreach ((string Code, string Name) option in languages)
+            {
+              <option value="@option.Code">@option.Name</option>
+            }
+          </select>
+        </label>
+        <label class="toggle"><input type="checkbox" @bind="showOriginal" /> Original</label>
+        <button class="@(drawing ? "primary" : "")" @onclick="ToggleDrawing">@(drawing ? "Drawing: drag over a text" : "Mark a string")</button>
+      </div>
+    </header>
+
+    <div class="shot-layout">
+      <div class="shot-main">
+        <ScreenshotPreview @ref="preview" Shot="shot" Texts="texts" Sources="sources" Selected="@selectedKey" ShowOriginal="showOriginal || drawing" Drawing="drawing" OnRegionClick="SelectRegion" />
+        <p class="muted small">
+          @(drawing
+            ? "Drag a box over one text on the screenshot, then pick which string it is. The colours are taken from the image; you can change them afterwards."
+            : "Each box shows its text in the chosen language at the size of the original. A red outline means the text needs a smaller font to fit.")
+        </p>
+      </div>
+
+      <aside class="shot-side">
+        @if (pending is not null)
+        {
+          <div class="card">
+            <h2>Which string is this?</h2>
+            <input type="search" placeholder="Search the source texts" @bind="pickSearch" @bind:event="oninput" autofocus />
+            <ul class="pick-list">
+              @foreach ((string Key, string Text, bool Placed) candidate in Candidates().Take(30))
+              {
+                string key = candidate.Key;
+                <li><button class="pick @(candidate.Placed ? "placed" : "")" @onclick="() => Assign(key)">@candidate.Text @(candidate.Placed ? "(already on a screenshot)" : "")</button></li>
+              }
+            </ul>
+            <button class="ghost" @onclick="() => pending = null">Cancel</button>
+          </div>
+        }
+
+        @if (selectedRegion is not null)
+        {
+          <div class="card">
+            <h2>Marked string</h2>
+            <p class="source-text">@(sources.TryGetValue(selectedRegion.Key, out string? s) ? s : selectedRegion.Key)</p>
+            <div class="region-fields">
+              <label>Align
+                <select value="@selectedRegion.Align" @onchange="SetAlign">
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </label>
+              <label>Background <input type="color" value="@selectedRegion.Background" @onchange="SetBackground" /></label>
+              <label>Text <input type="color" value="@selectedRegion.Color" @onchange="SetColor" /></label>
+            </div>
+            <div class="actions">
+              @foreach ((string Code, string Name) option in languages)
+              {
+                <a class="button small" href="@($"languages/{option.Code}?id={selectedRegion.Key}")">Translate to @option.Code</a>
+              }
+              <button class="ghost danger small" @onclick="RemoveRegion">Remove the mark</button>
+            </div>
+          </div>
+        }
+
+        <div class="card">
+          <h2>Strings on this screenshot</h2>
+          @if (shot.Regions.Count == 0)
+          {
+            <p class="muted small">None yet. Use "Mark a string".</p>
+          }
+          <ul class="region-list">
+            @foreach (Region region in shot.Regions.OrderBy(r => r.Y).ThenBy(r => r.X))
+            {
+              <li>
+                <button class="pick @(region.Key == selectedKey ? "selected" : "")" @onclick="() => SelectRegion(region.Key)">
+                  @(texts.TryGetValue(region.Key, out string? t) ? t : region.Key)
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <button class="ghost danger" @onclick="Delete">Delete this screenshot</button>
+      </aside>
+    </div>
+  </div>
+}
+
+@code {
+  [Parameter]
+  public string Id { get; set; } = "";
+
+  [SupplyParameterFromQuery(Name = "language")]
+  public string? QueryLanguage { get; set; }
+
+  private sealed record PendingRegion(double X, double Y, double Width, double Height, string Background, string Color, double FontSize, string Align);
+
+  private Screenshot? shot;
+  private Dictionary<string, string> texts = [];
+  private Dictionary<string, string> sources = [];
+  private Dictionary<string, string> allSources = [];
+  private HashSet<string> placedKeys = [];
+  private List<(string Code, string Name)> languages = [];
+  private string sourceLanguage = "";
+  private string language = "";
+  private bool showOriginal;
+  private bool drawing;
+  private string? selectedKey;
+  private Region? selectedRegion;
+  private PendingRegion? pending;
+  private string pickSearch = "";
+  private ScreenshotPreview? preview;
+  private DotNetObjectReference<ScreenshotDetail>? self;
+  private bool attached;
+
+  protected override void OnInitialized()
+  {
+    language = QueryLanguage ?? "";
+    Store.Changed += OnChanged;
+    Refresh();
+  }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (!attached && preview is not null)
+    {
+      self ??= DotNetObjectReference.Create(this);
+      await JS.InvokeVoidAsync("rcinel.attachDrawing", preview.Element, self);
+      attached = true;
+    }
+  }
+
+  private void Refresh()
+  {
+    if (!Store.EnsureLoaded())
+    {
+      return;
+    }
+    (shot, texts, sources, allSources, placedKeys, languages, sourceLanguage) = Store.Read(p =>
+    {
+      if (!p.Screenshots.TryGetValue(Id, out Screenshot? s))
+      {
+        return (null, [], [], [], [], [], p.Settings.SourceLanguage);
+      }
+      string? lang = language.Length > 0 ? language : null;
+      return ((Screenshot?)Views.Copy(s), Views.RegionTexts(p, s, lang), Views.RegionSources(p, s),
+        new Dictionary<string, string>(p.Source),
+        p.Screenshots.Values.SelectMany(x => x.Regions).Select(r => r.Key).ToHashSet(),
+        p.Languages.Select(l => (l.Code, l.Settings.DisplayName)).ToList(),
+        p.Settings.SourceLanguage);
+    });
+    selectedRegion = shot?.Regions.FirstOrDefault(r => r.Key == selectedKey);
+  }
+
+  private IEnumerable<(string Key, string Text, bool Placed)> Candidates()
+  {
+    string term = pickSearch.Trim();
+    return allSources
+      .Where(s => term.Length == 0 || s.Value.Contains(term, StringComparison.CurrentCultureIgnoreCase) || s.Key.StartsWith(term, StringComparison.OrdinalIgnoreCase))
+      .Where(s => shot is null || !shot.Regions.Any(r => r.Key == s.Key))
+      // Strings that aren't on any screenshot yet first: those are the ones still missing context.
+      .OrderBy(s => placedKeys.Contains(s.Key))
+      .ThenBy(s => s.Key, StringComparer.Ordinal)
+      .Select(s => (s.Key, s.Value, placedKeys.Contains(s.Key)));
+  }
+
+  private async Task ToggleDrawing()
+  {
+    drawing = !drawing;
+    pending = null;
+    await JS.InvokeVoidAsync("rcinel.setDrawing", preview!.Element, drawing);
+  }
+
+  /// <summary>Called by app.js when a box was dragged on the image. Coordinates are fractions of the image.</summary>
+  [JSInvokable]
+  public Task RegionDrawn(double x, double y, double width, double height, string background, string color, double fontSize, string align) => InvokeAsync(() =>
+  {
+    pending = new PendingRegion(x, y, width, height, background, color, fontSize, align is "left" or "right" ? align : "center");
+    pickSearch = "";
+    StateHasChanged();
+  });
+
+  private async Task Assign(string key)
+  {
+    if (pending is null)
+    {
+      return;
+    }
+    PendingRegion r = pending;
+    Store.Write(p => p.Screenshots[Id].Regions.Add(new Region
+    {
+      Key = key,
+      X = r.X,
+      Y = r.Y,
+      Width = r.Width,
+      Height = r.Height,
+      Background = r.Background,
+      Color = r.Color,
+      FontSize = r.FontSize,
+      Align = r.Align,
+    }));
+    pending = null;
+    selectedKey = key;
+    drawing = false;
+    await JS.InvokeVoidAsync("rcinel.setDrawing", preview!.Element, false);
+    Refresh();
+  }
+
+  private void SelectRegion(string key)
+  {
+    selectedKey = key;
+    selectedRegion = shot?.Regions.FirstOrDefault(r => r.Key == key);
+  }
+
+  private void Change(Action<Region> change)
+  {
+    if (selectedKey is null)
+    {
+      return;
+    }
+    string key = selectedKey;
+    Store.Write(p =>
+    {
+      foreach (Region region in p.Screenshots[Id].Regions.Where(r => r.Key == key))
+      {
+        change(region);
+      }
+    });
+  }
+
+  private void SetAlign(ChangeEventArgs e) => Change(r => r.Align = e.Value?.ToString() is "left" or "right" ? e.Value.ToString()! : "center");
+
+  private void SetBackground(ChangeEventArgs e) => Change(r => r.Background = e.Value?.ToString() ?? r.Background);
+
+  private void SetColor(ChangeEventArgs e) => Change(r => r.Color = e.Value?.ToString() ?? r.Color);
+
+  private void RemoveRegion()
+  {
+    if (selectedKey is null)
+    {
+      return;
+    }
+    string key = selectedKey;
+    Store.Write(p => p.Screenshots[Id].Regions.RemoveAll(r => r.Key == key));
+    selectedKey = null;
+    selectedRegion = null;
+  }
+
+  private void Rename(ChangeEventArgs e)
+  {
+    string title = e.Value?.ToString()?.Trim() ?? "";
+    if (title.Length > 0)
+    {
+      Store.Write(p => p.Screenshots[Id].Title = title);
+    }
+  }
+
+  private async Task Delete()
+  {
+    if (!await JS.InvokeAsync<bool>("confirm", "Delete this screenshot and its marks? The strings and translations stay."))
+    {
+      return;
+    }
+    Store.Write(p =>
+    {
+      if (p.Screenshots.Remove(Id, out Screenshot? removed))
+      {
+        string file = Path.Combine(p.ScreenshotDirectory, removed.File);
+        if (File.Exists(file))
+        {
+          File.Delete(file);
+        }
+      }
+    });
+    Navigation.NavigateTo("screenshots");
+  }
+
+  private void OnChanged() => InvokeAsync(() =>
+  {
+    Refresh();
+    StateHasChanged();
+  });
+
+  public async ValueTask DisposeAsync()
+  {
+    Store.Changed -= OnChanged;
+    self?.Dispose();
+    await ValueTask.CompletedTask;
+  }
+}

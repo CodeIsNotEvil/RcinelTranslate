@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Translate/Rcinel.Translate.csproj" />
+    <Project Path="src/Core/Rcinel.Translate.Core.csproj" />
+    <Project Path="src/Ai/Rcinel.Translate.Ai.csproj" />
+    <Project Path="src/Cli/Rcinel.Translate.Cli.csproj" />
+    <Project Path="src/Editor/Rcinel.Translate.Editor.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Translate.Tests/Rcinel.Translate.Tests.csproj" />
+    <Project Path="tests/Core.Tests/Rcinel.Translate.Core.Tests.csproj" />
+    <Project Path="tests/Cli.Tests/Rcinel.Translate.Cli.Tests.csproj" />
+    <Project Path="tests/Editor.Tests/Rcinel.Translate.Editor.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,120 @@
+@page "/users"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject UserStore UserStore
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>Users · RcinelTranslate</PageTitle>
+
+<div class="page">
+  <h1>Users</h1>
+  <p class="muted">Translators review and correct translations and add screenshots. Admins also manage users, languages and settings.</p>
+
+  <section class="card">
+    <table class="table">
+      <thead><tr><th>Name</th><th>Role</th><th>Since</th><th></th></tr></thead>
+      <tbody>
+        @foreach (EditorUser user in users)
+        {
+          <tr>
+            <td>@user.Name @(user.Name == me ? "(you)" : "")</td>
+            <td>
+              <select value="@user.Role" @onchange="e => SetRole(user.Name, e.Value?.ToString() ?? Roles.Translator)">
+                <option value="@Roles.Translator">Translator</option>
+                <option value="@Roles.Admin">Admin</option>
+              </select>
+            </td>
+            <td>@user.Created.ToString("yyyy-MM-dd")</td>
+            <td class="actions">
+              @if (resetting == user.Name)
+              {
+                <input type="password" @bind="resetPassword" placeholder="New password" autocomplete="new-password" />
+                <button class="small primary" @onclick="() => Reset(user.Name)">Set</button>
+                <button class="small ghost" @onclick="() => resetting = null">Cancel</button>
+              }
+              else
+              {
+                <button class="small" @onclick="() => { resetting = user.Name; resetPassword = string.Empty; }">Set password</button>
+                @if (user.Name != me)
+                {
+                  <button class="small ghost danger" @onclick="() => Remove(user.Name)">Remove</button>
+                }
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Add a user</h2>
+    <form class="inline-form" @onsubmit="Add">
+      <label>Name <input @bind="newName" autocomplete="off" required /></label>
+      <label>Password <input type="password" @bind="newPassword" autocomplete="new-password" required minlength="10" /></label>
+      <label>
+        Role
+        <select @bind="newRole">
+          <option value="@Roles.Translator">Translator</option>
+          <option value="@Roles.Admin">Admin</option>
+        </select>
+      </label>
+      <button type="submit" class="primary">Add</button>
+    </form>
+    <p class="muted small">Give them the password in person or through a password manager; they can change it under their name in the menu.</p>
+  </section>
+
+  @if (message is not null)
+  {
+    <p class="@(isError ? "error-box" : "notice")">@message</p>
+  }
+</div>
+
+@code {
+  private IReadOnlyList<EditorUser> users = [];
+  private string me = "";
+  private string newName = "";
+  private string newPassword = "";
+  private string newRole = Roles.Translator;
+  private string? resetting;
+  private string resetPassword = "";
+  private string? message;
+  private bool isError;
+
+  protected override async Task OnInitializedAsync()
+  {
+    me = (await Auth.GetAuthenticationStateAsync()).User.Identity?.Name ?? "";
+    users = UserStore.All();
+  }
+
+  private void Run(Action action, string success)
+  {
+    try
+    {
+      action();
+      message = success;
+      isError = false;
+    }
+    catch (ArgumentException e)
+    {
+      message = e.Message;
+      isError = true;
+    }
+    users = UserStore.All();
+  }
+
+  private void Add() => Run(() =>
+  {
+    UserStore.Add(newName, newPassword, newRole);
+    newName = newPassword = "";
+  }, "Added.");
+
+  private void SetRole(string name, string role) => Run(() => UserStore.SetRole(name, role), $"{name} is now {role}.");
+
+  private void Reset(string name) => Run(() =>
+  {
+    UserStore.SetPassword(name, resetPassword);
+    resetting = null;
+  }, $"Set a new password for {name}; their other sessions are signed out.");
+
+  private void Remove(string name) => Run(() => UserStore.Remove(name), $"Removed {name}.");
+}

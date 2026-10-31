@@ -1,0 +1,19 @@
+{
+  "format": 1,
+  "name": "Demo Notes",
+  "sourceLanguage": "en",
+  "translations": "translations",
+  "sources": ["../src", "../web"],
+  "functions": ["Translate", "translate", "Rcinel.translate"],
+  "languages": [
+    { "code": "de", "name": "Deutsch", "instructions": "Address the user informally (du), as most German consumer apps do." },
+    { "code": "fr", "name": "Français", "instructions": "Address the user formally (vous)." },
+    { "code": "pt-BR", "name": "Português (Brasil)", "instructions": "" }
+  ],
+  "ai": {
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "batchSize": 40,
+    "instructions": "This is a note-taking app. Keep the app name \"Notes\" in English."
+  }
+}

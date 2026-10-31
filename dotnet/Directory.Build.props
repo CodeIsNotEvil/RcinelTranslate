@@ -1,0 +1,29 @@
+<Project>
+  <!--
+    Namespaces follow the project names: Rcinel.Translate, Rcinel.Translate.Core, ... (the owner's
+    choice; MyMonoRepo's apps use the CINE root namespace instead, decision 0008 is to be revised).
+    Because the root namespace is called Rcinel, an app can't write Rcinel.Translate(...): C# finds
+    the namespace Rcinel before the class. Apps import the class instead,
+    `using static Rcinel.Translate.Rcinel;`, and call Translate("id", "English text").
+    Inside this repository's own namespaces, `Rcinel` still means the class.
+  -->
+  <PropertyGroup>
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <!--
+      The release version for every package and app. The vX.Y.Z tag must match it, so must
+      java/gradle.properties and javascript/package.json (CI checks all three), and CHANGELOG.md
+      needs a section for it.
+    -->
+    <Version>0.1.0</Version>
+    <Authors>CodeIsNotEvil</Authors>
+    <Copyright>Copyright (c) 2026 CodeIsNotEvil</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/CodeIsNotEvil/RcinelTranslate</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/CodeIsNotEvil/RcinelTranslate</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>translation;localization;i18n;l10n;uuidv7</PackageTags>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

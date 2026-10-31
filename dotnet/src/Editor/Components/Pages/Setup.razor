@@ -1,0 +1,95 @@
+@page "/setup"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout EmptyLayout
+@using System.Security.Cryptography
+@using System.Text
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@inject UserStore Users
+@inject NavigationManager Navigation
+
+<PageTitle>Set up · RcinelTranslate</PageTitle>
+
+<div class="card narrow">
+  <h1>Create the first admin</h1>
+  @if (Users.SetupToken is null)
+  {
+    <p>This editor already has accounts. <a href="login">Sign in</a>.</p>
+  }
+  else if (!TokenMatches(Token))
+  {
+    <p>Use the full setup link from the editor's log: it contains a one-time token.</p>
+  }
+  else
+  {
+    <p>This account can add the other users and languages.</p>
+    <form method="post" @formname="setup" @onsubmit="Create" class="stack">
+      <AntiforgeryToken />
+      <input type="hidden" name="Token" value="@Token" />
+      <label>
+        User name
+        <input name="Input.Name" value="@Input.Name" autocomplete="username" required />
+      </label>
+      <label>
+        Password (at least 10 characters)
+        <input name="Input.Password" type="password" autocomplete="new-password" required minlength="10" />
+      </label>
+      @if (error is not null)
+      {
+        <p class="error-box" role="alert">@error</p>
+      }
+      <button type="submit" class="primary">Create and sign in</button>
+    </form>
+  }
+</div>
+
+@code {
+  public sealed class SetupInput
+  {
+    public string Name { get; set; } = "";
+    public string Password { get; set; } = "";
+  }
+
+  [CascadingParameter]
+  private HttpContext HttpContext { get; set; } = default!;
+
+  [SupplyParameterFromQuery(Name = "token")]
+  private string? QueryToken { get; set; }
+
+  [SupplyParameterFromForm(Name = "Token")]
+  private string? FormToken { get; set; }
+
+  private string? Token => FormToken ?? QueryToken;
+
+  [SupplyParameterFromForm]
+  private SetupInput Input { get; set; } = default!;
+
+  protected override void OnInitialized() => Input ??= new();
+
+  private string? error;
+
+  private bool TokenMatches(string? token) =>
+    Users.SetupToken is string expected && token is not null
+    && CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(token));
+
+  private async Task Create()
+  {
+    if (!TokenMatches(Token))
+    {
+      error = "The setup token is wrong or was used already.";
+      return;
+    }
+    try
+    {
+      EditorUser user = Users.Add(Input.Name, Input.Password, Roles.Admin);
+      await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, UserStore.Principal(user),
+        new AuthenticationProperties { IsPersistent = true });
+      Navigation.NavigateTo("/");
+    }
+    catch (ArgumentException e)
+    {
+      error = e.Message;
+    }
+  }
+}

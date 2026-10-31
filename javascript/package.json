@@ -1,0 +1,43 @@
+{
+  "name": "rcinel-translate",
+  "version": "0.1.0",
+  "description": "Loads a translation set for a language and translates with translate(\"UUIDv7\", \"English text\"). No dependencies, for browsers and Node.",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./node": {
+      "types": "./src/node.d.ts",
+      "default": "./src/node.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "translation",
+    "localization",
+    "i18n",
+    "l10n",
+    "uuidv7"
+  ],
+  "author": "CodeIsNotEvil",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CodeIsNotEvil/RcinelTranslate.git",
+    "directory": "javascript"
+  },
+  "homepage": "https://github.com/CodeIsNotEvil/RcinelTranslate#readme"
+}

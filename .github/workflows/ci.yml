@@ -1,0 +1,101 @@
+# Builds and tests all three clients, the CLI and the editor, checks that every part carries the same
+# version, and that the editor's container image still builds. The release workflow runs it first on
+# a vX.Y.Z tag, where it also checks that the tag matches the version and that CHANGELOG.md has a
+# dated section for it.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  versions:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: One version everywhere
+        run: |
+          dotnet=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' dotnet/Directory.Build.props)
+          java=$(sed -n 's/^version=//p' java/gradle.properties)
+          js=$(node -p "require('./javascript/package.json').version")
+          echo "dotnet=$dotnet java=$java javascript=$js"
+          if [ "$dotnet" != "$java" ] || [ "$dotnet" != "$js" ]; then
+            echo "::error::The versions differ. Set the same one in dotnet/Directory.Build.props, java/gradle.properties and javascript/package.json."
+            exit 1
+          fi
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            if [ "${GITHUB_REF_NAME}" != "v$dotnet" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} doesn't match version $dotnet."
+              exit 1
+            fi
+            if ! grep -q "^## $dotnet - [0-9]" CHANGELOG.md; then
+              echo "::error::CHANGELOG.md has no dated section for $dotnet."
+              exit 1
+            fi
+          fi
+
+  dotnet:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: dotnet
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test RcinelTranslate.slnx
+      # The demo project is checked like an app's project would be in its own CI.
+      - name: rcinel check on the demo
+        run: dotnet run --project src/Cli -- check --project ../samples/demo/i18n
+      - name: Pack the libraries and the tool
+        run: |
+          for project in src/Translate src/Core src/Cli; do
+            dotnet pack "$project" -c Release -o ../artifacts
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget
+          path: artifacts/*.nupkg
+
+  java:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: java
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew --no-daemon test jar
+
+  javascript:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: javascript
+    strategy:
+      matrix:
+        node: [18, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+
+  editor-image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # podman is on the runner image; building with it proves the Dockerfile needs no Docker-only features.
+      - run: podman build -f dotnet/src/Editor/Dockerfile -t localhost/rcinel-translate-editor:ci dotnet

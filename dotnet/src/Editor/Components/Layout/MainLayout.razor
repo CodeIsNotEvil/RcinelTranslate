@@ -1,0 +1,98 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject ProjectStore Store
+
+<div class="shell">
+  <nav class="sidebar">
+    <a class="brand" href="">
+      <img src="favicon.svg" alt="" width="28" height="28" />
+      <span>
+        <strong>RcinelTranslate</strong>
+        <small>@projectName</small>
+      </span>
+    </a>
+
+    <NavLink class="nav-item" href="" Match="NavLinkMatch.All">Overview</NavLink>
+    @if (languages.Count > 0)
+    {
+      <div class="nav-heading">Languages</div>
+      @foreach (LanguageLink language in languages)
+      {
+        <NavLink class="nav-item nav-language" href="@($"languages/{language.Code}")">
+          <span>@language.Name</span>
+          <span class="nav-percent">@language.Percent%</span>
+        </NavLink>
+      }
+    }
+    <div class="nav-heading">Project</div>
+    <NavLink class="nav-item" href="screenshots">Screenshots</NavLink>
+    <AuthorizeView Roles="@Roles.Admin">
+      <NavLink class="nav-item" href="settings">Settings</NavLink>
+      <NavLink class="nav-item" href="users">Users</NavLink>
+    </AuthorizeView>
+
+    <div class="sidebar-foot">
+      <AuthorizeView>
+        <NavLink class="nav-item" href="account">@context.User.Identity?.Name</NavLink>
+        <form method="post" action="account/logout">
+          <AntiforgeryToken />
+          <button type="submit" class="link-button">Sign out</button>
+        </form>
+      </AuthorizeView>
+    </div>
+  </nav>
+
+  <main class="content">
+    @if (loadError is not null)
+    {
+      <div class="page">
+        <h1>The project can't be read</h1>
+        <p class="error-box">@loadError</p>
+        <p>Fix the file (a leftover merge conflict, for example) and this page loads again by itself. Nothing was saved over it.</p>
+      </div>
+    }
+    else
+    {
+      @Body
+    }
+  </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+  Something went wrong. <a href="" class="reload">Reload</a>
+</div>
+
+@code {
+  private sealed record LanguageLink(string Code, string Name, int Percent);
+
+  private string projectName = "";
+  private List<LanguageLink> languages = [];
+  private string? loadError;
+
+  protected override void OnInitialized()
+  {
+    Store.Changed += OnChanged;
+    Refresh();
+  }
+
+  private void Refresh()
+  {
+    if (!Store.EnsureLoaded())
+    {
+      loadError = Store.LoadError;
+      return;
+    }
+    loadError = null;
+    (projectName, languages) = Store.Read(p => (
+      p.Settings.Name,
+      p.Languages.Select(l => new LanguageLink(l.Code, l.Settings.DisplayName, p.GetProgress(l.Code).ConfirmedPercent)).ToList()));
+  }
+
+  private void OnChanged() => InvokeAsync(() =>
+  {
+    Refresh();
+    StateHasChanged();
+  });
+
+  public void Dispose() => Store.Changed -= OnChanged;
+}
