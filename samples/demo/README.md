@@ -1,13 +1,11 @@
 # Demo
 
-A small notes app to try RcinelTranslate with. `src/SettingsPage.cs` and `web/app.js` call
-`Translate` (C#) / `translate` (JavaScript); `i18n/` is the project those calls produced with
-`rtr scan --assign`, with:
+A small notes app to try RcinelTranslate with. `src/SettingsPage.cs` (C#) and `web/app.js`
+(JavaScript) hold the calls; `i18n/` is the project `rtr scan --assign` made from them:
 
-- German partly done: some confirmed, some AI drafts, one outdated because the English changed after
-  review, three missing;
+- German partly done (confirmed, drafts, one outdated, three missing);
 - French barely started, Brazilian Portuguese empty;
-- one screenshot of the settings page with every text on it marked.
+- one screenshot of the settings page with its texts marked.
 
 ```fish
 cd ../../dotnet
@@ -17,6 +15,3 @@ set -x Rcinel__AdminUser admin
 set -x Rcinel__AdminPassword a-long-password
 dotnet run --project src/Editor      # http://localhost:5280
 ```
-
-The ids in the code were filled in by `rtr scan --assign` on 2026-10-31, which is the date their
-UUIDv7s carry.
