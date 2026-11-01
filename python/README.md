@@ -1,8 +1,7 @@
 # rcinel-translate
 
-The Python client of [RcinelTranslate](https://github.com/CodeIsNotEvil/RcinelTranslate): loads a
-translation set for a language and translates with `translate("UUIDv7", "English text")`, the same
-call as in the C#, Java, JavaScript and Rust clients. Standard library only, Python 3.9+, typed.
+The Python client of [RcinelTranslate](https://github.com/CodeIsNotEvil/RcinelTranslate). Standard
+library only, Python 3.9+, typed.
 
 ```python
 import locale
@@ -23,5 +22,3 @@ greeting = translate("01a192e3-5bd4-7008-9a54-036fafe0c7af", "Welcome back, {nam
 | `use(set)` | Switches to a `TranslationSet` you built, for example `TranslationSet.parse("de", files("myapp").joinpath("translations/de.json").read_text())` for package data. |
 | `on_change(listener)` | Called after every switch; returns a function that removes the listener. |
 | `language()`, `current()`, `reset()` | The loaded language, the loaded set, and back to the English texts. |
-
-The file format and the rest of the tooling are described in the main repository.

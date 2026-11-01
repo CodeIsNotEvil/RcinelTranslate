@@ -1,217 +1,80 @@
 # RcinelTranslate
 
-Translations for apps, keyed by UUIDv7, for C#, Java, JavaScript, Python and Rust. You write the
-English text where it's used:
+Translations for apps, keyed by UUIDv7. Write the English text where it's used:
 
 ```csharp
-saveButton.Text = Translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");
-```
-
-```java
-saveButton.setText(translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save"));
+saveButton.Text = Translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");   // C#
 ```
 
 ```js
-saveButton.textContent = translate('01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d', 'Save');
+saveButton.textContent = translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");   // Java, JavaScript, Python, Rust
 ```
 
-```python
-save_button.set_text(translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save"))
-```
+With German loaded the app shows "Speichern"; without a translation it shows "Save".
 
-```rust
-save_button.set_text(&translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save"));
-```
-
-and the app shows "Speichern" when German is loaded, or "Save" when there's no translation yet. The
-call has the same shape in every language; only the first letter follows each language's
-convention.
-
-Around that one call there is:
-
-- **Small clients** for .NET (netstandard2.0), Java (8+, Android included), JavaScript (browsers
-  and Node), Python (3.9+) and Rust (1.70+). They load the translation files you ship with the app.
-  None of them has dependencies.
-- **Plain JSON files**, one per language, in the key-value format i18next, Crowdin, Lokalise and
-  Weblate already read. Sorted by id, and since a UUIDv7 starts with its creation time, new strings
-  always land at the end: a release's translations show up as one block in the diff.
-- **`rtr`**, a command-line tool: it collects the translate calls from your code (and
-  fills in ids for you), shows how far each language is, checks the files in CI and exports them.
-- **A web editor** for translators: AI drafts every missing translation (with Claude), people
-  confirm or correct them, and screenshots of the app show each text in place with a live preview of
-  the new wording, so "too long for the button" shows up before the release.
+- **Clients** for .NET (netstandard2.0), Java 8+ and Android, JavaScript, Python 3.9+ and Rust 1.70+.
+  No dependencies.
+- **Plain JSON files**, one per language, sorted by id. A UUIDv7 starts with its creation time, so new
+  strings land at the end and diffs stay small.
+- **`rtr`**: collects the calls from your code, assigns ids, shows progress, checks files in CI.
+- **A web editor**: AI drafts the missing translations, people confirm or correct them, and
+  screenshots show each text in place with a live preview.
 
 | | |
 |---|---|
 | ![The language view: strings on the left, the translation and a live preview of the screen on the right](docs/images/editor-language.png) | ![A screenshot with every marked text in German](docs/images/editor-screenshot.png) |
 
-## How it fits together
+## How it works
 
 ```
-your app's repository
-├── src/                              Translate / translate("id", "English text") calls
+your app
+├── src/                  Translate("id", "English text") calls
 └── i18n/
-    ├── rcinel-translate.json                   the project: languages, code folders, AI settings
-    ├── translations/   ← ship this   en.json (from `rtr scan`), de.json, fr.json, ...
-    ├── review/                       who confirmed what, and for which English text
-    └── context/                      notes and screenshots for translators
+    ├── rcinel-translate.json   languages, code folders, AI settings
+    ├── translations/     ← ship this: en.json (generated), de.json, fr.json, ...
+    ├── review/           who confirmed what
+    └── context/          notes and screenshots for translators
 ```
 
-1. Write `Translate("", "English text")` (C#) or `translate("", "English text")` (Java,
-   JavaScript) in the code.
-2. `rtr scan --assign` gives every new call its id (in your code) and writes the English texts to
-   `translations/en.json`.
-3. In the editor, start "Draft with AI" for each language. Translators go through the drafts,
-   confirm or correct them, and see them on the screenshots.
-4. Commit `i18n/` with the code. The translations ship with the release they belong to.
-5. In CI, `rtr check` keeps broken placeholders and malformed files out, and
-   `rtr check --require-confirmed` can block a release until everything is reviewed.
+1. Write `Translate("", "English text")` in the code (lowercase `translate` outside C#).
+2. `rtr scan --assign` fills in the ids and writes the English texts to `translations/en.json`.
+3. In the editor, draft each language with AI, then confirm or correct the drafts.
+4. Commit `i18n/` with the code.
+5. In CI, `rtr check` catches broken placeholders and malformed files; `--require-confirmed` blocks
+   a release until everything is reviewed.
 
-The format is described in [docs/format.md](docs/format.md).
+The file format: [docs/format.md](docs/format.md).
 
-## The clients
+## Clients
 
-All five behave the same: load a language (with its fallback chain: `de-AT` reads `de.json` and then
-`de-AT.json` on top), then translate. An id without a translation shows the English text from the
-call, so nothing breaks while a language is incomplete. They run the same test cases
-([spec/fixtures](spec/fixtures)), so a file reads the same everywhere.
+All five load a language with its fallback chain (`de-AT` reads `de.json`, then `de-AT.json` on top)
+and show the English text for ids without a translation. They share one set of test cases
+([spec/fixtures](spec/fixtures)).
 
-### .NET
+| Language | Install | Use |
+|---|---|---|
+| .NET | `dotnet add package Rcinel.Translate` | `TryLoad(CultureInfo.CurrentUICulture.Name);`<br>`Translate(id, "Saved {0} settings", count)` |
+| Java, Kotlin | `io.github.codeisnotevil:rcinel-translate:0.1.0` | `import static io.github.codeisnotevil.rcinel.Rcinel.translate;`<br>`translate(id, "Saved {0} settings", count)` |
+| JavaScript | `npm install rcinel-translate` | `import { translate, tryLoad } from 'rcinel-translate';`<br>`translate(id, 'Welcome back, {name}!', { name })` |
+| Python | `pip install rcinel-translate` | `from rcinel_translate import translate, try_load`<br>`translate(id, "Welcome back, {name}!", name=name)` |
+| Rust | `rcinel-translate = "0.1"` | `use rcinel_translate::{translate, translate_with, try_load};`<br>`translate_with(id, "Saved {0} settings", &[("0", &count)])` |
 
-```
-dotnet add package Rcinel.Translate
-```
+Where each client looks for `translations/<language>.json` by default:
 
-```csharp
-// No using needed on .NET 6 and newer: the package imports the Rcinel class for the whole project.
-// Reads translations/<language>.json next to the app.
-TryLoad(CultureInfo.CurrentUICulture.Name);
+- .NET and Rust: next to the app. Python: `./translations`. Java: the class path (`src/main/resources`).
+  JavaScript: fetched from `baseUrl`, or from disk with `rcinel-translate/node`.
+- Every client can also take a set you read yourself (embedded resources, Android assets, bundled
+  JSON, package data, `include_str!`) and switch to it with `Use` / `use` / `use_set`.
 
-title.Text = Translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings");
-toast.Text = Translate("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", count);
-
-LanguageChanged += (_, _) => RefreshTexts();
-```
-
-The methods belong to the class `Rcinel` in the namespace `Rcinel.Translate`. On .NET 6 and newer
-the package adds `global using static Rcinel.Translate.Rcinel;` to your project, so `Translate`,
-`TryLoad`, `Load`, `Use` and `LanguageChanged` work in every file without a prefix or a using.
-
-- **Older targets** (.NET Framework, netstandard, Unity and others on C# 7.3) don't know global
-  usings and don't get it. Write `using static Rcinel.Translate.Rcinel;` at the top of each file
-  instead.
-- **Switch it off** if your project has its own `Translate` method, and use the per-file
-  `using static` where you need it:
-
-  ```xml
-  <PropertyGroup>
-    <RcinelTranslateGlobalUsing>false</RcinelTranslateGlobalUsing>
-  </PropertyGroup>
-  ```
-
-A plain `using Rcinel.Translate;` imports only the types, not the methods. `Rcinel.Translate(...)`
-doesn't compile in apps either, because C# reads `Rcinel` there as the namespace. Where a bare name
-is ambiguous, the full name works: `Rcinel.Translate.Rcinel.Directory = ...` sets the folder the
-files are read from.
-
-Ship the files by copying the project's translations folder into the output:
+**.NET:** on .NET 6+ the package adds `global using static Rcinel.Translate.Rcinel;`, so `Translate`
+works in every file. On older targets, write that `using static` per file. To turn the global using
+off, set `<RcinelTranslateGlobalUsing>false</RcinelTranslateGlobalUsing>`. To ship the files:
 
 ```xml
-<ItemGroup>
-  <None Include="..\i18n\translations\*.json" LinkBase="translations" CopyToOutputDirectory="PreserveNewest" />
-</ItemGroup>
+<None Include="..\i18n\translations\*.json" LinkBase="translations" CopyToOutputDirectory="PreserveNewest" />
 ```
 
-Or embed them and use `TranslationSet.FromStream`, then `Use(set)`.
-
-### Java and Android
-
-```kotlin
-implementation("io.github.codeisnotevil:rcinel-translate:0.1.0")
-```
-
-```java
-import static io.github.codeisnotevil.rcinel.Rcinel.translate;
-import static io.github.codeisnotevil.rcinel.Rcinel.tryLoad;
-
-// Reads translations/<language>.json from the class path (put the folder in src/main/resources).
-tryLoad(Locale.getDefault().toLanguageTag());
-
-title.setText(translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings"));
-toast.setText(translate("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", count));
-```
-
-Kotlin works the same way with `import io.github.codeisnotevil.rcinel.Rcinel.translate`. If you
-prefer the class name in front, `Rcinel.translate(...)` works too.
-
-On Android, put the files in `assets/translations/` and load them with
-`TranslationSet.read(language, getAssets().open("translations/de.json"))` and `Rcinel.use(set)`.
-Java 8 bytecode, no dependencies.
-
-### JavaScript
-
-```
-npm install rcinel-translate
-```
-
-```js
-import { translate, tryLoad } from 'rcinel-translate';
-
-// Fetches translations/<language>.json relative to the page.
-await tryLoad(navigator.language, { baseUrl: '/translations/' });
-
-title.textContent = translate('01a192e3-5bcc-7000-a8d2-327b1cb0f737', 'Settings');
-greeting.textContent = translate('01a192e3-5bd4-7008-9a54-036fafe0c7af', 'Welcome back, {name}!', { name });
-```
-
-Every function (`translate`, `load`, `tryLoad`, `use`, `useObject`, `reset`, `onChange`,
-`language`) is a named export; the default export `Rcinel` groups the same functions for code that
-prefers `Rcinel.translate(...)`. In Node, `import { useDirectory } from 'rcinel-translate/node'`
-reads the files from disk. With a bundler you can also import the JSON and call
-`useObject('de', de)`. TypeScript types are included.
-
-### Python
-
-```
-pip install rcinel-translate
-```
-
-```python
-import locale
-from rcinel_translate import translate, try_load
-
-# Reads translations/<language>.json from the given folder (set_directory() sets a default).
-try_load(locale.getlocale()[0] or "", "translations")
-
-title = translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings")
-toast = translate("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", count)
-greeting = translate("01a192e3-5bd4-7008-9a54-036fafe0c7af", "Welcome back, {name}!", name=name)
-```
-
-Standard library only and typed. Placeholders are filled without `str.format`, so a translation
-with a typo shows `{nmae}` instead of raising `KeyError`. For files shipped as package data, read
-them with `importlib.resources` and switch with `use(TranslationSet.parse("de", text))`.
-
-### Rust
-
-```toml
-[dependencies]
-rcinel-translate = "0.1"
-```
-
-```rust
-use rcinel_translate::{translate, translate_with, try_load};
-
-// Reads translations/<language>.json next to the executable (set_directory() changes that).
-try_load("de")?;
-
-let title = translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings");
-let toast = translate_with("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", &[("0", &count)]);
-```
-
-No dependencies. `translate` returns an owned `String`, so switching languages on one thread while
-another translates is safe. To embed the files in the binary, use
-`use_set(TranslationSet::parse("de", include_str!("../translations/de.json"))?)`.
+API details: [JavaScript](javascript/README.md), [Python](python/README.md), [Rust](rust/README.md).
 
 ## The `rtr` command
 
@@ -222,17 +85,19 @@ dotnet tool install -g Rcinel.Translate.Cli
 | Command | Does |
 |---|---|
 | `rtr init i18n --languages de,fr --sources ../src` | Creates a project. |
-| `rtr scan [--assign]` | Collects the calls from the code into `en.json`. With `--assign`, calls with an empty id get a new UUIDv7, written into your code. |
-| `rtr status [--json]` | Progress per language: confirmed, draft, outdated, missing. |
-| `rtr check [--require-complete \| --require-confirmed] [--strict]` | Finds broken placeholders, invalid ids, translations of removed strings and files that aren't in canonical form. Exits with 1 on errors. |
-| `rtr format` | Rewrites the files in canonical form (after a hand edit or a merge). |
-| `rtr prune` | Removes translations of strings that are no longer in the code. |
+| `rtr scan [--assign]` | Collects the calls into `en.json`; `--assign` writes new ids into empty `""` ids. |
+| `rtr status [--json]` | Progress per language. |
+| `rtr check [--require-complete \| --require-confirmed] [--strict]` | Validates placeholders, ids and canonical form. Exits 1 on errors. |
+| `rtr format` | Rewrites the files in canonical form. |
+| `rtr prune` | Removes translations of strings no longer in the code. |
 | `rtr add-language pt-BR --name "Português"` | Adds a language. |
-| `rtr export build/translations [--confirmed-only]` | Writes the files to ship, optionally without unreviewed text. |
-| `rtr draft de` | Drafts the missing and outdated strings of a language with Claude (needs `ANTHROPIC_API_KEY`). |
-| `rtr id [count]` | Prints new UUIDv7 ids. |
+| `rtr export build/translations [--confirmed-only]` | Writes the files to ship. |
+| `rtr draft de` | AI-drafts a language (needs `ANTHROPIC_API_KEY`). |
+| `rtr id [count]` | Prints new UUIDv7s. |
 
-`rtr` finds the project from any folder inside your app, like git finds `.git`.
+`rtr` finds the project from any folder inside your app. The scanner reads calls whose id and text
+are string literals, and reports the ones it can't read. Add your own wrapper functions under
+`functions` in `rcinel-translate.json`.
 
 ```
 $ rtr status
@@ -242,49 +107,25 @@ de        ###----...  35%      5         1        3
 fr        -.........   0%      2         0       12
 ```
 
-The scanner reads `Translate(...)` (C#) and `translate(...)` or `Rcinel.translate(...)` (Java,
-Kotlin, JavaScript, TypeScript) calls whose id and text are plain string literals. Since other code
-has functions called `translate` too, a bare call only counts when its first argument is `""` or a
-UUID; the others are left alone. Anything it can't read, such as a
-variable, `$"..."` or a template literal with `${}`, it reports, because a text the scanner can't
-see can't be translated. If you wrap the call, add your wrapper's name to `functions` in
-`rcinel-translate.json`.
-
 ## The editor
 
-A web app for the people who translate. It works directly on the `i18n` folder of a checkout of
-your app, so its changes are ordinary file changes you review and commit.
+It works on the `i18n` folder of a checkout, so its changes are ordinary file changes you commit.
 
-- **Overview**: progress of every language, the results of `rtr check`, adding languages.
-- **Language view**: every string with its state (missing, draft, outdated, confirmed), filters and
-  search. Confirm with Ctrl+Enter and go on to the next open string. Placeholders the translation
-  lost are flagged before it can be confirmed.
-- **AI drafts**: one click drafts every missing and outdated string of a language in the background.
-  Strings that are marked on a screenshot are sent along with it, together with their notes, the
-  language's style rules and the translations reviewers already confirmed (for consistent terms).
-  Drafts are stored as drafts; only people confirm.
-- **Screenshots**: upload screenshots of your app and drag a box over each text. The editor takes
-  the background, text colour, size and alignment from the image. Every language can then be
-  previewed on the screenshot, and a red outline marks text that needs a smaller font than the
-  original to fit.
-- **Users**: admins and translators, with passwords hashed with ASP.NET Core Identity's hasher.
-  There's no self-registration.
-
-### Run it with Podman (or Docker)
+- **Overview**: progress per language, `rtr check` results, adding languages.
+- **Language view**: every string with its state, filters and search. Ctrl+Enter confirms and moves
+  on.
+- **AI drafts**: one click drafts a whole language, using screenshots, notes, style rules and
+  confirmed terms. Drafts stay drafts until a person confirms them.
+- **Screenshots**: mark each text with a box and preview any language in place. Text that doesn't
+  fit is outlined in red.
+- **Users**: admins and translators, no self-registration.
 
 ```fish
-cp .env.example .env    # set RCINEL_PROJECT to your app's i18n folder, and an admin password
-podman compose up -d --build
+cp .env.example .env    # set RCINEL_PROJECT and an admin password
+podman compose up -d --build    # http://localhost:8080
 ```
 
-Then open http://localhost:8080. Without `RCINEL_ADMIN_USER`/`RCINEL_ADMIN_PASSWORD`, the first
-account is created through a one-time setup link that `podman compose logs editor` prints. Under
-rootless Podman the editor writes the project files as you. Under Docker, set `RCINEL_USER` to
-`$(id -u):$(id -g)`. Always run `podman compose`, not the older `docker-compose`.
-
-Put it behind a reverse proxy with HTTPS if it's reachable from outside your machine.
-
-### Run it from source
+Or from source:
 
 ```fish
 cd dotnet
@@ -295,11 +136,13 @@ set -x ANTHROPIC_API_KEY sk-ant-...   # optional, for AI drafts
 dotnet run --project src/Editor       # http://localhost:5280
 ```
 
+`.env.example` covers the setup link for the first account and running under Docker. Put the editor
+behind HTTPS if it's reachable from outside.
+
 ## Try it
 
-[`samples/demo`](samples/demo) is a small notes app with a settings page in C# and a web page in
-JavaScript, a project with German partly reviewed, French barely started and Brazilian Portuguese
-empty, and a screenshot with all its texts marked. Point the editor at `samples/demo/i18n`.
+[`samples/demo`](samples/demo) is a small app with a German, French and Portuguese project at various
+stages. Point the editor at `samples/demo/i18n`.
 
 ## Building
 
@@ -308,42 +151,32 @@ empty, and a screenshot with all its texts marked. Point the editor at `samples/
 | .NET client, core, CLI, editor | `dotnet/` | `dotnet test RcinelTranslate.slnx` (.NET 10 SDK) |
 | Java client | `java/` | `./gradlew test` (JDK 17+) |
 | JavaScript client | `javascript/` | `npm test` (Node 18+) |
-| Python client | `python/` | `PYTHONPATH=src python -m unittest discover -s tests -t .` (Python 3.9+) |
+| Python client | `python/` | `PYTHONPATH=src python -m unittest discover -s tests -t .` |
 | Rust client | `rust/` | `cargo test` |
 
-The version is the same everywhere: `<Version>` in `dotnet/Directory.Build.props`,
-`java/gradle.properties`, `javascript/package.json`, `python/pyproject.toml` and `rust/Cargo.toml`,
-and CI checks they agree.
+All parts share one version, set in `dotnet/Directory.Build.props`, `java/gradle.properties`,
+`javascript/package.json`, `python/pyproject.toml` and `rust/Cargo.toml`. CI checks that they match.
 
 ## Releasing
 
-A `vX.Y.Z` tag publishes everything through the
-[Release workflow](.github/workflows/release.yml). It first runs CI, which also checks that the tag
-matches the five version numbers and that [CHANGELOG.md](CHANGELOG.md) has a dated section
-(`## X.Y.Z - yyyy-mm-dd`). Then it publishes:
+Set the version in all five files, add a dated `## X.Y.Z - yyyy-mm-dd` section to
+[CHANGELOG.md](CHANGELOG.md), merge, then push a `vX.Y.Z` tag. The
+[Release workflow](.github/workflows/release.yml) runs CI and publishes to every registry plus a
+GitHub release. Re-running it after a partial failure is safe. It needs these repository secrets:
 
-| Where | What | Secrets |
-|---|---|---|
-| NuGet | `Rcinel.Translate`, `Rcinel.Translate.Core`, the `Rcinel.Translate.Cli` tool | `NUGET_API_KEY`: an API key from nuget.org with push rights for `Rcinel.Translate*` |
-| Maven Central | `io.github.codeisnotevil:rcinel-translate`, signed | `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_PASSWORD`: a user token from central.sonatype.com (the `io.github.codeisnotevil` namespace must be verified there, which GitHub accounts can do). `MAVEN_SIGNING_KEY`: an ASCII-armored GPG private key whose public key is on a keyserver, and `MAVEN_SIGNING_PASSWORD`: its passphrase |
-| npm | `rcinel-translate`, with a provenance statement | `NPM_TOKEN`: an automation or granular token from npmjs.com |
-| PyPI | `rcinel-translate`, wheel and sdist | `PYPI_API_TOKEN`: an API token from pypi.org (for the first upload an account-wide one; afterwards one scoped to the project) |
-| crates.io | `rcinel-translate` | `CARGO_REGISTRY_TOKEN`: an API token from crates.io with the publish scope |
-| GitHub | a release with the changelog section as notes and the packages attached | none |
-
-Add the secrets under the repository's Settings, Secrets and variables, Actions. A release whose
-secret is missing stops with an error naming it. Re-running a release after a partial failure is
-safe: versions that already reached NuGet, npm, PyPI or crates.io are skipped.
-
-To release: set the version in the five files, date its CHANGELOG section, merge, then
-`git tag v0.1.0 && git push origin v0.1.0`.
+| Registry | Secrets |
+|---|---|
+| NuGet | `NUGET_API_KEY` (push rights for `Rcinel.Translate*`) |
+| Maven Central | `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD` (a user token from central.sonatype.com, with the `io.github.codeisnotevil` namespace verified), `MAVEN_SIGNING_KEY` (an ASCII-armored GPG private key), `MAVEN_SIGNING_PASSWORD` |
+| npm | `NPM_TOKEN` |
+| PyPI | `PYPI_API_TOKEN` |
+| crates.io | `CARGO_REGISTRY_TOKEN` (publish scope) |
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The clients have no dependencies. The editor and the CLI use the
-official [Anthropic C# SDK](https://github.com/anthropics/anthropic-sdk-csharp) (MIT) for AI drafts.
-The Java build publishes with the
-[Gradle Maven Publish Plugin](https://github.com/vanniktech/gradle-maven-publish-plugin)
-(Apache 2.0), which is a build tool and not part of the published library. The tests read the shared
-cases with [Gson](https://github.com/google/gson) (Apache 2.0) and
-[serde_json](https://github.com/serde-rs/json) (MIT or Apache 2.0); neither ships with a client.
+MIT, see [LICENSE](LICENSE). The clients have no dependencies. The editor and CLI use the
+[Anthropic C# SDK](https://github.com/anthropics/anthropic-sdk-csharp) (MIT). Build and test tools,
+which don't ship with any client:
+[Gradle Maven Publish Plugin](https://github.com/vanniktech/gradle-maven-publish-plugin) (Apache 2.0),
+[Gson](https://github.com/google/gson) (Apache 2.0) and
+[serde_json](https://github.com/serde-rs/json) (MIT or Apache 2.0).
