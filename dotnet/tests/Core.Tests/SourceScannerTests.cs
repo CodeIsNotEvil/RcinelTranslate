@@ -119,6 +119,30 @@ public class SourceScannerTests
   }
 
   [Fact]
+  public void Finds_calls_in_python_and_rust()
+  {
+    using TempProject temp = new("de");
+    temp.WriteSource("app.py", $$"""
+      from rcinel_translate import translate
+      title = translate('{{A}}', 'Settings')
+      greeting = translate("{{B}}", "It's {name}", name=name)
+      other = translate("", f"Hi {name}")
+      unrelated = translator.translate('hello', 'de')
+      """);
+    temp.WriteSource("main.rs", $$"""
+      use rcinel_translate::translate;
+      let t = translate("{{C}}", "Gr\u{fc}\u{df}e");
+      let q = rcinel_translate::translate("{{D}}", "Quit");
+      """);
+    ScanResult scan = SourceScanner.Scan(temp.Project);
+    Assert.Equal(["Settings", "It's {name}", "Grüße", "Quit"], scan.Strings.Values.Select(s => s.Text));
+    // The f-string can't be read; it's reported, not guessed.
+    ScanIssue issue = Assert.Single(scan.Issues);
+    Assert.False(issue.IsError);
+    Assert.EndsWith("app.py", issue.File);
+  }
+
+  [Fact]
   public void Other_apis_called_Translate_are_left_alone()
   {
     using TempProject temp = new("de");

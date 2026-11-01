@@ -1,4 +1,4 @@
-// spec/fixtures/cases.json, the cases the C# and Java clients run too. A failure here means the
+// spec/fixtures/cases.json, the cases the C#, Java, Python and Rust clients run too. A failure here means the
 // clients disagree about what an app shows.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

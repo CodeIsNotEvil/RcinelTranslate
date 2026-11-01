@@ -1,0 +1,30 @@
+# The Python client: reads the shipped translation files, nothing else. Standard library only.
+[build-system]
+requires = ["setuptools>=77"]  # 77: the SPDX license expression in [project]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rcinel-translate"
+# The release version. Must match <Version> in dotnet/Directory.Build.props and the other clients;
+# CI checks all of them against each other and against the vX.Y.Z tag.
+version = "0.1.0"
+description = "Loads a translation set for a language and translates with translate(\"UUIDv7\", \"English text\"). No dependencies."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "CodeIsNotEvil" }]
+keywords = ["translation", "localization", "i18n", "l10n", "uuidv7"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Internationalization",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/CodeIsNotEvil/RcinelTranslate"
+Source = "https://github.com/CodeIsNotEvil/RcinelTranslate/tree/main/python"
+
+[tool.setuptools.package-data]
+rcinel_translate = ["py.typed"]

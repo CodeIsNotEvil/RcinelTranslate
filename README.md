@@ -1,7 +1,7 @@
 # RcinelTranslate
 
-Translations for apps, keyed by UUIDv7, for C#, Java and JavaScript. You write the English text where
-it's used:
+Translations for apps, keyed by UUIDv7, for C#, Java, JavaScript, Python and Rust. You write the
+English text where it's used:
 
 ```csharp
 saveButton.Text = Translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save");
@@ -15,14 +15,23 @@ saveButton.setText(translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save"));
 saveButton.textContent = translate('01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d', 'Save');
 ```
 
+```python
+save_button.set_text(translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save"))
+```
+
+```rust
+save_button.set_text(&translate("01a192e3-5bd4-7005-b3d0-b98f0a9cfe3d", "Save"));
+```
+
 and the app shows "Speichern" when German is loaded, or "Save" when there's no translation yet. The
-call has the same shape in all three languages; only the first letter follows each language's
+call has the same shape in every language; only the first letter follows each language's
 convention.
 
 Around that one call there is:
 
-- **Small clients** for .NET (netstandard2.0), Java (8+, Android included) and JavaScript (browsers
-  and Node). They load the translation files you ship with the app. None of them has dependencies.
+- **Small clients** for .NET (netstandard2.0), Java (8+, Android included), JavaScript (browsers
+  and Node), Python (3.9+) and Rust (1.70+). They load the translation files you ship with the app.
+  None of them has dependencies.
 - **Plain JSON files**, one per language, in the key-value format i18next, Crowdin, Lokalise and
   Weblate already read. Sorted by id, and since a UUIDv7 starts with its creation time, new strings
   always land at the end: a release's translations show up as one block in the diff.
@@ -62,7 +71,7 @@ The format is described in [docs/format.md](docs/format.md).
 
 ## The clients
 
-All three behave the same: load a language (with its fallback chain: `de-AT` reads `de.json` and then
+All five behave the same: load a language (with its fallback chain: `de-AT` reads `de.json` and then
 `de-AT.json` on top), then translate. An id without a translation shows the English text from the
 call, so nothing breaks while a language is incomplete. They run the same test cases
 ([spec/fixtures](spec/fixtures)), so a file reads the same everywhere.
@@ -161,6 +170,49 @@ prefers `Rcinel.translate(...)`. In Node, `import { useDirectory } from 'rcinel-
 reads the files from disk. With a bundler you can also import the JSON and call
 `useObject('de', de)`. TypeScript types are included.
 
+### Python
+
+```
+pip install rcinel-translate
+```
+
+```python
+import locale
+from rcinel_translate import translate, try_load
+
+# Reads translations/<language>.json from the given folder (set_directory() sets a default).
+try_load(locale.getlocale()[0] or "", "translations")
+
+title = translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings")
+toast = translate("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", count)
+greeting = translate("01a192e3-5bd4-7008-9a54-036fafe0c7af", "Welcome back, {name}!", name=name)
+```
+
+Standard library only and typed. Placeholders are filled without `str.format`, so a translation
+with a typo shows `{nmae}` instead of raising `KeyError`. For files shipped as package data, read
+them with `importlib.resources` and switch with `use(TranslationSet.parse("de", text))`.
+
+### Rust
+
+```toml
+[dependencies]
+rcinel-translate = "0.1"
+```
+
+```rust
+use rcinel_translate::{translate, translate_with, try_load};
+
+// Reads translations/<language>.json next to the executable (set_directory() changes that).
+try_load("de")?;
+
+let title = translate("01a192e3-5bcc-7000-a8d2-327b1cb0f737", "Settings");
+let toast = translate_with("01a192e3-5bd4-7007-bb84-212f497c373e", "Saved {0} settings", &[("0", &count)]);
+```
+
+No dependencies. `translate` returns an owned `String`, so switching languages on one thread while
+another translates is safe. To embed the files in the binary, use
+`use_set(TranslationSet::parse("de", include_str!("../translations/de.json"))?)`.
+
 ## The `rtr` command
 
 ```
@@ -256,15 +308,18 @@ empty, and a screenshot with all its texts marked. Point the editor at `samples/
 | .NET client, core, CLI, editor | `dotnet/` | `dotnet test RcinelTranslate.slnx` (.NET 10 SDK) |
 | Java client | `java/` | `./gradlew test` (JDK 17+) |
 | JavaScript client | `javascript/` | `npm test` (Node 18+) |
+| Python client | `python/` | `PYTHONPATH=src python -m unittest discover -s tests -t .` (Python 3.9+) |
+| Rust client | `rust/` | `cargo test` |
 
 The version is the same everywhere: `<Version>` in `dotnet/Directory.Build.props`,
-`java/gradle.properties` and `javascript/package.json`, and CI checks they agree.
+`java/gradle.properties`, `javascript/package.json`, `python/pyproject.toml` and `rust/Cargo.toml`,
+and CI checks they agree.
 
 ## Releasing
 
 A `vX.Y.Z` tag publishes everything through the
 [Release workflow](.github/workflows/release.yml). It first runs CI, which also checks that the tag
-matches the three version numbers and that [CHANGELOG.md](CHANGELOG.md) has a dated section
+matches the five version numbers and that [CHANGELOG.md](CHANGELOG.md) has a dated section
 (`## X.Y.Z - yyyy-mm-dd`). Then it publishes:
 
 | Where | What | Secrets |
@@ -272,13 +327,15 @@ matches the three version numbers and that [CHANGELOG.md](CHANGELOG.md) has a da
 | NuGet | `Rcinel.Translate`, `Rcinel.Translate.Core`, the `Rcinel.Translate.Cli` tool | `NUGET_API_KEY`: an API key from nuget.org with push rights for `Rcinel.Translate*` |
 | Maven Central | `io.github.codeisnotevil:rcinel-translate`, signed | `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_PASSWORD`: a user token from central.sonatype.com (the `io.github.codeisnotevil` namespace must be verified there, which GitHub accounts can do). `MAVEN_SIGNING_KEY`: an ASCII-armored GPG private key whose public key is on a keyserver, and `MAVEN_SIGNING_PASSWORD`: its passphrase |
 | npm | `rcinel-translate`, with a provenance statement | `NPM_TOKEN`: an automation or granular token from npmjs.com |
+| PyPI | `rcinel-translate`, wheel and sdist | `PYPI_API_TOKEN`: an API token from pypi.org (for the first upload an account-wide one; afterwards one scoped to the project) |
+| crates.io | `rcinel-translate` | `CARGO_REGISTRY_TOKEN`: an API token from crates.io with the publish scope |
 | GitHub | a release with the changelog section as notes and the packages attached | none |
 
 Add the secrets under the repository's Settings, Secrets and variables, Actions. A release whose
 secret is missing stops with an error naming it. Re-running a release after a partial failure is
-safe: versions that already reached NuGet or npm are skipped.
+safe: versions that already reached NuGet, npm, PyPI or crates.io are skipped.
 
-To release: set the version in the three files, date its CHANGELOG section, merge, then
+To release: set the version in the five files, date its CHANGELOG section, merge, then
 `git tag v0.1.0 && git push origin v0.1.0`.
 
 ## License
@@ -287,4 +344,6 @@ MIT, see [LICENSE](LICENSE). The clients have no dependencies. The editor and th
 official [Anthropic C# SDK](https://github.com/anthropics/anthropic-sdk-csharp) (MIT) for AI drafts.
 The Java build publishes with the
 [Gradle Maven Publish Plugin](https://github.com/vanniktech/gradle-maven-publish-plugin)
-(Apache 2.0), which is a build tool and not part of the published library.
+(Apache 2.0), which is a build tool and not part of the published library. The tests read the shared
+cases with [Gson](https://github.com/google/gson) (Apache 2.0) and
+[serde_json](https://github.com/serde-rs/json) (MIT or Apache 2.0); neither ships with a client.

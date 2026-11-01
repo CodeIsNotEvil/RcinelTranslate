@@ -24,11 +24,15 @@ jobs:
           dotnet=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' dotnet/Directory.Build.props)
           java=$(sed -n 's/^version=//p' java/gradle.properties)
           js=$(node -p "require('./javascript/package.json').version")
-          echo "dotnet=$dotnet java=$java javascript=$js"
-          if [ "$dotnet" != "$java" ] || [ "$dotnet" != "$js" ]; then
-            echo "::error::The versions differ. Set the same one in dotnet/Directory.Build.props, java/gradle.properties and javascript/package.json."
-            exit 1
-          fi
+          python=$(python3 -c "import tomllib; print(tomllib.load(open('python/pyproject.toml', 'rb'))['project']['version'])")
+          rust=$(python3 -c "import tomllib; print(tomllib.load(open('rust/Cargo.toml', 'rb'))['package']['version'])")
+          echo "dotnet=$dotnet java=$java javascript=$js python=$python rust=$rust"
+          for v in "$java" "$js" "$python" "$rust"; do
+            if [ "$v" != "$dotnet" ]; then
+              echo "::error::The versions differ. Set the same one in dotnet/Directory.Build.props, java/gradle.properties, javascript/package.json, python/pyproject.toml and rust/Cargo.toml."
+              exit 1
+            fi
+          done
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             if [ "${GITHUB_REF_NAME}" != "v$dotnet" ]; then
               echo "::error::Tag ${GITHUB_REF_NAME} doesn't match version $dotnet."
@@ -92,6 +96,46 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
+
+  python:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: python
+    strategy:
+      matrix:
+        # The oldest supported version and a current one.
+        python: ["3.9", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Test
+        run: PYTHONPATH=src python -m unittest discover -s tests -t . -v
+      - name: Build the wheel and the sdist
+        run: |
+          python -m pip install --quiet build
+          python -m build
+
+  rust:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup toolchain install 1.70 --profile minimal
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      # rust-version in Cargo.toml promises 1.70; building with it keeps that promise honest.
+      - name: Builds with the minimum supported Rust
+        run: cargo +1.70 build --lib
+      - run: cargo package --allow-dirty
 
   editor-image:
     runs-on: ubuntu-24.04

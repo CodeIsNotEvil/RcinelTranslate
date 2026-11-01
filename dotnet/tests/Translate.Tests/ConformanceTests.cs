@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Rcinel.Translate.Tests;
 
 /// <summary>
-/// spec/fixtures/cases.json, the cases the Java and JavaScript clients run too. If one of them
-/// fails here, the clients disagree about what an app shows.
+/// spec/fixtures/cases.json, the cases the Java, JavaScript, Python and Rust clients run too. If one
+/// of them fails here, the clients disagree about what an app shows.
 /// </summary>
 public class ConformanceTests
 {

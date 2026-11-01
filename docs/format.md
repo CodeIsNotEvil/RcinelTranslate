@@ -1,6 +1,6 @@
 # File format
 
-Version 1. This page is the contract between the clients (C#, Java, JavaScript), the `rtr`
+Version 1. This page is the contract between the clients (C#, Java, JavaScript, Python, Rust), the `rtr`
 tool and the editor. Anything that reads or writes these files should follow it, and the shared
 cases in [`spec/fixtures`](../spec/fixtures) check that the clients do.
 
@@ -64,7 +64,7 @@ Readers accept any valid JSON of that shape, plus a UTF-8 byte order mark at the
 
 - values that aren't strings (numbers, `null`, nested objects, arrays);
 - a key that appears twice. JSON allows it, but parsers disagree about which value wins, and the
-  three clients must show the same text;
+  clients must show the same text;
 - anything else that isn't JSON (trailing commas, comments, single quotes).
 
 Writers (`rtr` and the editor) always produce the **canonical form**, so diffs only ever show
@@ -97,14 +97,17 @@ that don't exist are skipped; loading fails only when none exists.
 
 ### Placeholders
 
-Texts may contain placeholders that the app fills in: `{0}`, `{name}`, `{{count}}`, printf-style
-`%s` / `%1$d` / `%@`, and markup such as `<b>...</b>`. The files store them as they are. A
+Texts may contain placeholders that the app fills in: `{0}`, `{name}`, `{{count}}`, Rust's and
+Python's `{}` / `{:?}`, printf-style `%s` / `%1$d` / `%@`, Python's `%(name)s`, and markup such as
+`<b>...</b>`. The files store them as they are. A
 translation must contain the same placeholders as the source, in any order; `rtr check`
 reports translations that lost or invented one, and the editor won't confirm them.
 
-The clients leave placeholders alone, except for the convenience overloads: C#'s
+The clients leave placeholders alone, except for the convenience functions: C#'s
 `Translate(id, english, args)` runs `string.Format`, Java's fills `{0}`, `{1}`, ... and
-JavaScript's fills `{0}` from an array or `{name}` from an object.
+JavaScript's fills `{0}` from an array or `{name}` from an object, Python's from positional and
+keyword arguments, and Rust's `translate_with` from `(key, value)` pairs. All of them leave a
+placeholder without a value as it is.
 
 ## The project file
 

@@ -1,7 +1,7 @@
 // Reads a translation file: one JSON object whose values are all strings (docs/format.md).
 // Not JSON.parse: it takes the last of two equal keys and accepts numbers or nested objects, while
-// the C# and Java clients reject those files. All three must show the same text, so this is the
-// third twin of FlatJsonReader, and spec/fixtures checks that they agree.
+// the other clients reject those files. All of them must show the same text, so this is a twin of
+// FlatJsonReader (C#, Java) and reader.rs, and spec/fixtures checks that they agree.
 
 /** Thrown when a translation file is not a flat JSON object of strings. The message says where. */
 export class TranslationFormatError extends Error {
