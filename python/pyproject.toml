@@ -1,6 +1,6 @@
 # The Python client: reads the shipped translation files, nothing else. Standard library only.
 [build-system]
-requires = ["setuptools>=69"]
+requires = ["setuptools>=77"]  # 77: the SPDX license expression in [project]
 build-backend = "setuptools.build_meta"
 
 [project]

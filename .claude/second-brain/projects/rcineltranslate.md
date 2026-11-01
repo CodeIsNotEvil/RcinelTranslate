@@ -8,7 +8,7 @@ status: active
 
 A translation library the owner wants to publish (command `rtr`, project file
 `rcinel-translate.json`; "Rcinel" alone is the prefix of all the owner's apps, see [[2026-11-01]]): `Rcinel.Translate("UUIDv7", "English text")` in
-C#, Java and JavaScript, plain JSON files shipped with the app, the `rtr` tool, and a web editor
+C#, Java, JavaScript, Python and Rust, plain JSON files shipped with the app, the `rtr` tool, and a web editor
 where AI drafts and people confirm. Version 0.1.0, not released yet.
 
 ## Open questions for the owner
@@ -22,6 +22,10 @@ where AI drafts and people confirm. Version 0.1.0, not released yet.
   confirmed.
 
 ## Next steps
+- More clients when an app needs them. C: decide how long a returned `const char*` stays valid
+  across a language switch (keep every loaded set, or "until the next load"). C++: a header over the
+  C library. Lua: parse from a string only, the host supplies the file (some hosts, such as Roblox,
+  can't read files). Each also needs the scanner and the placeholder check extended.
 - The editor's container image is not published yet (GHCR would fit the release workflow).
 - Plural forms: today a text is one string; ICU MessageFormat or per-count keys would need a format
   change ([[0002-flat-key-value-json]]).

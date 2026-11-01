@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-RcinelTranslate: translations keyed by UUIDv7, with clients for .NET, Java and JavaScript, the
+RcinelTranslate: translations keyed by UUIDv7, with clients for .NET, Java, JavaScript, Python and
+Rust, the
 `rtr` command and a web editor with AI drafts. The owner (CodeIsNotEvil) means to publish it, so
 treat every public API, file format and doc as something strangers will depend on. Several of the
 rules below come from the owner's monorepo, CodeIsNotEvil/MyMonoRepo.
@@ -18,7 +19,9 @@ rules below come from the owner's monorepo, CodeIsNotEvil/MyMonoRepo.
   - `tests/`: xUnit, one project per source project.
 - `java/`: the Java client (Gradle, Java 8 bytecode, no dependencies).
 - `javascript/`: the JavaScript client (ESM, no dependencies, hand-written `.d.ts`).
-- `spec/fixtures/`: the conformance cases all three clients run.
+- `python/`: the Python client (`rcinel_translate`, standard library only, Python 3.9+, typed).
+- `rust/`: the Rust client (`rcinel-translate` crate, no dependencies, Rust 1.70+).
+- `spec/fixtures/`: the conformance cases all five clients run.
 - `docs/format.md`: the file format, which is the contract between all parts. Change it together
   with the code.
 - `samples/demo/`: a demo app with a project, used for trying the editor and as documentation.
@@ -31,6 +34,8 @@ dotnet test tests/Core.Tests --filter "FullyQualifiedName~SourceScannerTests"
 dotnet run --project src/Cli -- status --project ../samples/demo/i18n
 cd java; ./gradlew test
 cd javascript; npm test
+cd python; PYTHONPATH=src python -m unittest discover -s tests -t .
+cd rust; cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo test
 podman compose up -d --build                          # the editor on :8080, see .env.example
 ```
 
@@ -53,9 +58,12 @@ Don't create or push release tags unless the owner asks.
 
 ## Rules that keep the parts in step
 
-- **The three clients behave the same.** Each has its own reader (`FlatJsonReader` in C# and Java,
-  `reader.js`), because none may have dependencies. A change to how files are read goes into all
-  three and into `spec/fixtures/cases.json`, and all three test suites must pass.
+- **The five clients behave the same.** Each has its own reader (`FlatJsonReader` in C# and Java,
+  `reader.js`, `reader.rs`, and `_reader.py`, which is `json.loads` plus the duplicate and
+  non-string checks), because none may have dependencies. A change to how files are read goes into
+  all five and into `spec/fixtures/cases.json`, and all five test suites must pass. A new language's
+  client also needs the scanner to know its file extension and string literals, and the
+  placeholder check to know its format syntax.
 - **Files are written in canonical form only through `CanonicalJson` and `ProjectFiles`** (Core).
   Sorted by id, one entry per line, LF, no BOM. Anything that writes project files another way makes
   the diffs noisy that the whole format exists to keep quiet.
@@ -73,7 +81,9 @@ Don't create or push release tags unless the owner asks.
 
 Formatting comes from `.editorconfig`: two spaces (four in Java and Gradle scripts), LF, UTF-8
 without BOM. C# uses file-scoped namespaces and primary constructors; Java is plain Java 8 (no
-`var`, no `List.of`); JavaScript is modern ESM.
+`var`, no `List.of`); JavaScript is modern ESM;
+Python is typed and keeps 3.9 compatible; Rust is rustfmt-formatted (120 columns) and
+clippy-clean.
 
 Namespaces are the project names, `Rcinel.Translate.*` (the owner's choice for this repository; it
 departs from MyMonoRepo's `CINE` root namespace, and decision 0008 is still to be revised by the
@@ -105,9 +115,9 @@ Document commands as `podman compose ...`, never `docker-compose`.
 ## Versions, releases, dependencies
 
 One version for everything: `<Version>` in `dotnet/Directory.Build.props`, `version` in
-`java/gradle.properties` and in `javascript/package.json`. CI checks they agree. A release is a
+`java/gradle.properties`, `javascript/package.json`, `python/pyproject.toml` and `rust/Cargo.toml`. CI checks they agree. A release is a
 `vX.Y.Z` tag matching them, with a dated section in `CHANGELOG.md`; pushing it runs
-`.github/workflows/release.yml`, which publishes to NuGet, Maven Central and npm (README,
+`.github/workflows/release.yml`, which publishes to NuGet, Maven Central, npm, PyPI and crates.io (README,
 "Releasing"). Pushing a tag publishes for real, so only the owner decides when.
 
 The clients have no dependencies and must keep it that way. When the editor, CLI or tests gain one,

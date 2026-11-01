@@ -46,7 +46,7 @@ final class FlatJsonReader {
                 expect(':');
                 skipWhitespace();
                 String value = readString("a string value (translation files hold only strings)");
-                // Legal JSON, but parsers disagree on which value wins, so all three clients reject it.
+                // Legal JSON, but parsers disagree on which value wins, so every client rejects it.
                 if (result.containsKey(key)) {
                     throw error("the key \"" + key + "\" appears twice", keyStart);
                 }

@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 /**
- * spec/fixtures/cases.json, the cases the C# and JavaScript clients run too. A failure here means
- * the clients disagree about what an app shows.
+ * spec/fixtures/cases.json, the cases the C#, JavaScript, Python and Rust clients run too. A failure
+ * here means the clients disagree about what an app shows.
  */
 class ConformanceTest {
     private static final Path FIXTURES = Paths.get(System.getProperty("rcinel.fixtures", "../spec/fixtures"));
