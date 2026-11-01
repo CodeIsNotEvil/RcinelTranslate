@@ -7,7 +7,7 @@ namespace Rcinel.Translate.Core;
 /// <summary>
 /// Writes the files an app ships to another folder, for builds that must not ship unreviewed text.
 /// The translations folder in git holds drafts too (that's how reviewers see them in the app);
-/// a release build runs `rcinel export --confirmed-only` and copies the result instead.
+/// a release build runs `rtr export --confirmed-only` and copies the result instead.
 /// </summary>
 public static class Exporter
 {

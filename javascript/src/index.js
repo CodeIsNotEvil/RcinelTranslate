@@ -231,7 +231,7 @@ export function onChange(listener) {
 /**
  * The app-wide entry point. Load a language once at start (and again when the user picks another),
  * then write every UI text as translate("UUIDv7", "English text"). The English text is the
- * fallback and the source of truth: `rcinel scan` collects the calls into the source file.
+ * fallback and the source of truth: `rtr scan` collects the calls into the source file.
  */
 export const Rcinel = Object.freeze({
   translate,

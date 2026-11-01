@@ -97,7 +97,7 @@ public static class SourceScanner
     {
       project.Source[s.Id] = s.Text;
     }
-    // Translations of removed ids stay until `rcinel prune`: a string that comes back after a
+    // Translations of removed ids stay until `rtr prune`: a string that comes back after a
     // refactor (or a revert) keeps its reviewed translations.
     return new SourceUpdate(added, changed, removed.Count);
   }
@@ -219,7 +219,7 @@ public static class SourceScanner
       {
         if (!assignIds)
         {
-          result.Issues.Add(new ScanIssue(true, file, line, $"\"{Shorten(text)}\" has no id yet; run `rcinel scan --assign` to give it one"));
+          result.Issues.Add(new ScanIssue(true, file, line, $"\"{Shorten(text)}\" has no id yet; run `rtr scan --assign` to give it one"));
           continue;
         }
         id = UuidV7.New();
@@ -228,7 +228,7 @@ public static class SourceScanner
       }
       else if (!UuidV7.IsValid(id))
       {
-        result.Issues.Add(new ScanIssue(true, file, line, $"\"{id}\" is not a lowercase UUIDv7; get one with `rcinel id`"));
+        result.Issues.Add(new ScanIssue(true, file, line, $"\"{id}\" is not a lowercase UUIDv7; get one with `rtr id`"));
         continue;
       }
       if (result.Strings.TryGetValue(id, out SourceString? existing))

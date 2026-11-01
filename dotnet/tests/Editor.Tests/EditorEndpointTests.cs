@@ -46,8 +46,8 @@ public sealed class EditorEndpointTests(EditorFactory factory) : IClassFixture<E
   }
 
   [Theory]
-  [InlineData("/images/..%2Frcinel.json")]
-  [InlineData("/images/..%2F..%2Fi18n%2Frcinel.json")]
+  [InlineData("/images/..%2Frcinel-translate.json")]
+  [InlineData("/images/..%2F..%2Fi18n%2Frcinel-translate.json")]
   [InlineData("/images/notes.json")]
   [InlineData("/images/missing.png")]
   public async Task Only_screenshot_images_are_served(string path)

@@ -37,7 +37,7 @@ public class ProjectStoreTests
     ProjectStore store = Open(temp);
     Assert.Equal("Save", store.Read(p => p.Source[Save]));
 
-    // `git pull` or `rcinel scan` in another process.
+    // `git pull` or `rtr scan` in another process.
     TranslationProject other = TranslationProject.Load(temp.ProjectDirectory);
     other.Source[Save] = "Save all";
     other.Save();

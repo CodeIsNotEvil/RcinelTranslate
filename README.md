@@ -26,7 +26,7 @@ Around that one call there is:
 - **Plain JSON files**, one per language, in the key-value format i18next, Crowdin, Lokalise and
   Weblate already read. Sorted by id, and since a UUIDv7 starts with its creation time, new strings
   always land at the end: a release's translations show up as one block in the diff.
-- **`rcinel`**, a command-line tool: it collects the translate calls from your code (and
+- **`rtr`**, a command-line tool: it collects the translate calls from your code (and
   fills in ids for you), shows how far each language is, checks the files in CI and exports them.
 - **A web editor** for translators: AI drafts every missing translation (with Claude), people
   confirm or correct them, and screenshots of the app show each text in place with a live preview of
@@ -42,21 +42,21 @@ Around that one call there is:
 your app's repository
 ├── src/                              Translate / translate("id", "English text") calls
 └── i18n/
-    ├── rcinel.json                   the project: languages, code folders, AI settings
-    ├── translations/   ← ship this   en.json (from `rcinel scan`), de.json, fr.json, ...
+    ├── rcinel-translate.json                   the project: languages, code folders, AI settings
+    ├── translations/   ← ship this   en.json (from `rtr scan`), de.json, fr.json, ...
     ├── review/                       who confirmed what, and for which English text
     └── context/                      notes and screenshots for translators
 ```
 
 1. Write `Translate("", "English text")` (C#) or `translate("", "English text")` (Java,
    JavaScript) in the code.
-2. `rcinel scan --assign` gives every new call its id (in your code) and writes the English texts to
+2. `rtr scan --assign` gives every new call its id (in your code) and writes the English texts to
    `translations/en.json`.
 3. In the editor, start "Draft with AI" for each language. Translators go through the drafts,
    confirm or correct them, and see them on the screenshots.
 4. Commit `i18n/` with the code. The translations ship with the release they belong to.
-5. In CI, `rcinel check` keeps broken placeholders and malformed files out, and
-   `rcinel check --require-confirmed` can block a release until everything is reviewed.
+5. In CI, `rtr check` keeps broken placeholders and malformed files out, and
+   `rtr check --require-confirmed` can block a release until everything is reviewed.
 
 The format is described in [docs/format.md](docs/format.md).
 
@@ -161,7 +161,7 @@ prefers `Rcinel.translate(...)`. In Node, `import { useDirectory } from 'rcinel-
 reads the files from disk. With a bundler you can also import the JSON and call
 `useObject('de', de)`. TypeScript types are included.
 
-## The `rcinel` command
+## The `rtr` command
 
 ```
 dotnet tool install -g Rcinel.Translate.Cli
@@ -169,21 +169,21 @@ dotnet tool install -g Rcinel.Translate.Cli
 
 | Command | Does |
 |---|---|
-| `rcinel init i18n --languages de,fr --sources ../src` | Creates a project. |
-| `rcinel scan [--assign]` | Collects the calls from the code into `en.json`. With `--assign`, calls with an empty id get a new UUIDv7, written into your code. |
-| `rcinel status [--json]` | Progress per language: confirmed, draft, outdated, missing. |
-| `rcinel check [--require-complete \| --require-confirmed] [--strict]` | Finds broken placeholders, invalid ids, translations of removed strings and files that aren't in canonical form. Exits with 1 on errors. |
-| `rcinel format` | Rewrites the files in canonical form (after a hand edit or a merge). |
-| `rcinel prune` | Removes translations of strings that are no longer in the code. |
-| `rcinel add-language pt-BR --name "Português"` | Adds a language. |
-| `rcinel export build/translations [--confirmed-only]` | Writes the files to ship, optionally without unreviewed text. |
-| `rcinel draft de` | Drafts the missing and outdated strings of a language with Claude (needs `ANTHROPIC_API_KEY`). |
-| `rcinel id [count]` | Prints new UUIDv7 ids. |
+| `rtr init i18n --languages de,fr --sources ../src` | Creates a project. |
+| `rtr scan [--assign]` | Collects the calls from the code into `en.json`. With `--assign`, calls with an empty id get a new UUIDv7, written into your code. |
+| `rtr status [--json]` | Progress per language: confirmed, draft, outdated, missing. |
+| `rtr check [--require-complete \| --require-confirmed] [--strict]` | Finds broken placeholders, invalid ids, translations of removed strings and files that aren't in canonical form. Exits with 1 on errors. |
+| `rtr format` | Rewrites the files in canonical form (after a hand edit or a merge). |
+| `rtr prune` | Removes translations of strings that are no longer in the code. |
+| `rtr add-language pt-BR --name "Português"` | Adds a language. |
+| `rtr export build/translations [--confirmed-only]` | Writes the files to ship, optionally without unreviewed text. |
+| `rtr draft de` | Drafts the missing and outdated strings of a language with Claude (needs `ANTHROPIC_API_KEY`). |
+| `rtr id [count]` | Prints new UUIDv7 ids. |
 
-`rcinel` finds the project from any folder inside your app, like git finds `.git`.
+`rtr` finds the project from any folder inside your app, like git finds `.git`.
 
 ```
-$ rcinel status
+$ rtr status
 Demo Notes: 14 strings in en
 Language  Confirmed       Draft  Outdated  Missing
 de        ###----...  35%      5         1        3
@@ -196,14 +196,14 @@ has functions called `translate` too, a bare call only counts when its first arg
 UUID; the others are left alone. Anything it can't read, such as a
 variable, `$"..."` or a template literal with `${}`, it reports, because a text the scanner can't
 see can't be translated. If you wrap the call, add your wrapper's name to `functions` in
-`rcinel.json`.
+`rcinel-translate.json`.
 
 ## The editor
 
 A web app for the people who translate. It works directly on the `i18n` folder of a checkout of
 your app, so its changes are ordinary file changes you review and commit.
 
-- **Overview**: progress of every language, the results of `rcinel check`, adding languages.
+- **Overview**: progress of every language, the results of `rtr check`, adding languages.
 - **Language view**: every string with its state (missing, draft, outdated, confirmed), filters and
   search. Confirm with Ctrl+Enter and go on to the next open string. Placeholders the translation
   lost are flagged before it can be confirmed.

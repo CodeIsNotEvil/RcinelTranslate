@@ -6,8 +6,9 @@ status: active
 ---
 # RcinelTranslate
 
-A translation library the owner wants to publish: `Rcinel.Translate("UUIDv7", "English text")` in
-C#, Java and JavaScript, plain JSON files shipped with the app, the `rcinel` tool, and a web editor
+A translation library the owner wants to publish (command `rtr`, project file
+`rcinel-translate.json`; "Rcinel" alone is the prefix of all the owner's apps, see [[2026-11-01]]): `Rcinel.Translate("UUIDv7", "English text")` in
+C#, Java and JavaScript, plain JSON files shipped with the app, the `rtr` tool, and a web editor
 where AI drafts and people confirm. Version 0.1.0, not released yet.
 
 ## Open questions for the owner
@@ -16,7 +17,7 @@ where AI drafts and people confirm. Version 0.1.0, not released yet.
   (unscoped; a scope needs an npm org). Fine, or other names?
 - Publishing: `.github/workflows/release.yml` publishes on a `vX.Y.Z` tag, once the owner has
   added the secrets listed in the README ("Releasing"). Not run for real yet.
-- Should drafts ship? Today `translations/` holds drafts too, and `rcinel export --confirmed-only`
+- Should drafts ship? Today `translations/` holds drafts too, and `rtr export --confirmed-only`
   is the way to ship only reviewed text. The alternative is keeping drafts in `review/` until
   confirmed.
 

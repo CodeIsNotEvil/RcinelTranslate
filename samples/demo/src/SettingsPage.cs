@@ -5,7 +5,7 @@ namespace Demo;
 /// <summary>
 /// The settings screen of the demo notes app. Every visible text goes through Translate, imported
 /// from the Rcinel class with `using static` (`Rcinel.Translate(...)` would name the namespace).
-/// The English text is written right here, and `rcinel scan --assign` gave each call its id.
+/// The English text is written right here, and `rtr scan --assign` gave each call its id.
 /// </summary>
 public sealed class SettingsPage
 {

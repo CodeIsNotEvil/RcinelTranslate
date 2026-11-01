@@ -22,28 +22,39 @@ public sealed class LanguageData(LanguageSettings settings)
 }
 
 /// <summary>
-/// A translation project on disk, loaded into memory: rcinel.json plus the files next to it
+/// A translation project on disk, loaded into memory: rcinel-translate.json plus the files next to it
 /// (docs/format.md has the layout). Not thread-safe; the editor serializes access with a lock.
 /// </summary>
 public sealed class TranslationProject
 {
-  /// <summary>The name of the project file.</summary>
-  public const string FileName = "rcinel.json";
+  /// <summary>
+  /// The name of the project file. Named after the tool, not just "rcinel", because other Rcinel
+  /// apps may keep their own configuration in the same repository.
+  /// </summary>
+  public const string FileName = "rcinel-translate.json";
+
+  /// <summary>
+  /// The name before 0.1.0 was released. Still found and read, and written back under the same
+  /// name, so a project from then keeps working; rename the file to switch.
+  /// </summary>
+  public const string LegacyFileName = "rcinel.json";
 
   private readonly Dictionary<string, LanguageData> languages = new(StringComparer.OrdinalIgnoreCase);
 
-  private TranslationProject(string directory, ProjectSettings settings)
+  private TranslationProject(string projectFile, ProjectSettings settings)
   {
-    Directory = Path.GetFullPath(directory);
+    ProjectFile = Path.GetFullPath(projectFile);
+    Directory = Path.GetDirectoryName(ProjectFile)!;
     Settings = settings;
   }
 
-  /// <summary>The folder that holds rcinel.json.</summary>
+  /// <summary>The folder that holds rcinel-translate.json.</summary>
   public string Directory { get; }
 
   public ProjectSettings Settings { get; }
 
-  public string ProjectFile => Path.Combine(Directory, FileName);
+  /// <summary>The project file this project was loaded from or created as.</summary>
+  public string ProjectFile { get; }
 
   /// <summary>The shipped folder: the source file and one file per target language.</summary>
   public string TranslationsDirectory => Path.Combine(Directory, Settings.Translations);
@@ -52,7 +63,7 @@ public sealed class TranslationProject
   public string ContextDirectory => Path.Combine(Directory, "context");
   public string ScreenshotDirectory => Path.Combine(ContextDirectory, "screenshots");
 
-  /// <summary>translations/&lt;source&gt;.json: id to source (English) text, written by `rcinel scan`.</summary>
+  /// <summary>translations/&lt;source&gt;.json: id to source (English) text, written by `rtr scan`.</summary>
   public SortedDictionary<string, string> Source { get; } = new(StringComparer.Ordinal);
 
   /// <summary>context/notes.json: id to a hint for translators ("verb, on a button").</summary>
@@ -61,14 +72,14 @@ public sealed class TranslationProject
   /// <summary>context/screenshots.json, by screenshot id.</summary>
   public SortedDictionary<string, Screenshot> Screenshots { get; } = new(StringComparer.Ordinal);
 
-  /// <summary>The target languages in the order of rcinel.json.</summary>
+  /// <summary>The target languages in the order of rcinel-translate.json.</summary>
   public IEnumerable<LanguageData> Languages => Settings.Languages.Select(l => languages[l.Code]);
 
   /// <summary>
-  /// Finds rcinel.json: <paramref name="path"/> may be the file itself, the folder that holds it,
+  /// Finds rcinel-translate.json: <paramref name="path"/> may be the file itself, the folder that holds it,
   /// or any folder below that one (the way git finds .git), so the CLI works from anywhere in the app.
   /// </summary>
-  /// <exception cref="FileNotFoundException">No rcinel.json was found.</exception>
+  /// <exception cref="FileNotFoundException">No rcinel-translate.json was found.</exception>
   public static string FindProjectFile(string path)
   {
     string full = Path.GetFullPath(path);
@@ -78,19 +89,21 @@ public sealed class TranslationProject
     }
     for (string? dir = full; dir is not null; dir = Path.GetDirectoryName(dir))
     {
-      string candidate = Path.Combine(dir, FileName);
-      if (File.Exists(candidate))
+      // Projects usually sit in an i18n folder next to the code. The current name wins over the
+      // legacy one in each place.
+      foreach (string folder in new[] { dir, Path.Combine(dir, "i18n") })
       {
-        return candidate;
-      }
-      // Projects usually sit in an i18n folder next to the code.
-      string nested = Path.Combine(dir, "i18n", FileName);
-      if (File.Exists(nested))
-      {
-        return nested;
+        foreach (string name in new[] { FileName, LegacyFileName })
+        {
+          string candidate = Path.Combine(folder, name);
+          if (File.Exists(candidate))
+          {
+            return candidate;
+          }
+        }
       }
     }
-    throw new FileNotFoundException($"No {FileName} in {full} or a folder above it. Create one with `rcinel init`.");
+    throw new FileNotFoundException($"No {FileName} in {full} or a folder above it. Create one with `rtr init`.");
   }
 
   /// <summary>Loads the project that <paramref name="path"/> points to (see <see cref="FindProjectFile"/>).</summary>
@@ -99,7 +112,7 @@ public sealed class TranslationProject
   {
     string file = FindProjectFile(path);
     ProjectSettings settings = ProjectFiles.ReadSettings(file);
-    TranslationProject project = new(Path.GetDirectoryName(file)!, settings);
+    TranslationProject project = new(file, settings);
     project.ReadFiles();
     return project;
   }
@@ -108,12 +121,15 @@ public sealed class TranslationProject
   /// <exception cref="IOException">The folder already has a project.</exception>
   public static TranslationProject Create(string directory, ProjectSettings settings)
   {
-    if (File.Exists(Path.Combine(directory, FileName)))
+    foreach (string name in new[] { FileName, LegacyFileName })
     {
-      throw new IOException($"{Path.Combine(directory, FileName)} already exists.");
+      if (File.Exists(Path.Combine(directory, name)))
+      {
+        throw new IOException($"{Path.Combine(directory, name)} already exists.");
+      }
     }
     System.IO.Directory.CreateDirectory(directory);
-    TranslationProject project = new(directory, settings);
+    TranslationProject project = new(Path.Combine(directory, FileName), settings);
     foreach (LanguageSettings language in settings.Languages)
     {
       project.languages[language.Code] = new LanguageData(language);
@@ -197,7 +213,7 @@ public sealed class TranslationProject
   {
     if (!Source.TryGetValue(id, out string? source))
     {
-      throw new KeyNotFoundException($"\"{id}\" is not in the source file. Run `rcinel scan` first.");
+      throw new KeyNotFoundException($"\"{id}\" is not in the source file. Run `rtr scan` first.");
     }
     LanguageData data = GetLanguage(language);
     data.Texts[id] = text;

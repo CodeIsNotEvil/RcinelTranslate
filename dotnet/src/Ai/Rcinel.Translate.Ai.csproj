@@ -2,7 +2,7 @@
 
   <!--
     Drafts translations with Claude. Its own assembly so the netstandard2.0 Core stays free of the
-    Anthropic SDK, and both the editor and `rcinel draft` share one prompt.
+    Anthropic SDK, and both the editor and `rtr draft` share one prompt.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

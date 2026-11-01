@@ -31,7 +31,7 @@ public sealed class CheckOptions
 
 /// <summary>
 /// Finds what would break or confuse an app: ids that aren't UUIDv7, placeholders a translation
-/// lost, translations of ids that no longer exist, files that aren't in canonical form. `rcinel
+/// lost, translations of ids that no longer exist, files that aren't in canonical form. `rtr
 /// check` runs it, and CI should too.
 /// </summary>
 public static class ProjectChecker
@@ -51,7 +51,7 @@ public static class ProjectChecker
       {
         if (!project.Source.TryGetValue(pair.Key, out string? source))
         {
-          issues.Add(new(IssueSeverity.Warning, "orphaned", $"{pair.Key} is translated but no longer in the source; `rcinel prune` removes it", language.Code, pair.Key));
+          issues.Add(new(IssueSeverity.Warning, "orphaned", $"{pair.Key} is translated but no longer in the source; `rtr prune` removes it", language.Code, pair.Key));
           continue;
         }
         if (Placeholders.Compare(source, pair.Value) is string problem)
@@ -93,7 +93,7 @@ public static class ProjectChecker
 
     foreach (string file in NonCanonicalFiles(project))
     {
-      issues.Add(new(IssueSeverity.Warning, "format", $"{file} is not in canonical form (sorted by id, one entry per line); `rcinel format` rewrites it"));
+      issues.Add(new(IssueSeverity.Warning, "format", $"{file} is not in canonical form (sorted by id, one entry per line); `rtr format` rewrites it"));
     }
 
     if (options.Strict)

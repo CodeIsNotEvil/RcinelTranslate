@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Rcinel.Translate.Core;
 
-/// <summary>rcinel.json: what the project is and where its files live (docs/format.md, "The project file").</summary>
+/// <summary>rcinel-translate.json: what the project is and where its files live (docs/format.md, "The project file").</summary>
 public sealed class ProjectSettings
 {
   /// <summary>The version of the file layout. Raised only for changes old tools can't read.</summary>
@@ -17,14 +17,14 @@ public sealed class ProjectSettings
   /// <summary>The language the texts in the code are written in. "en" unless the app is written in another language.</summary>
   public string SourceLanguage { get; set; } = "en";
 
-  /// <summary>The folder with the shipped files, relative to rcinel.json. Apps copy this folder.</summary>
+  /// <summary>The folder with the shipped files, relative to rcinel-translate.json. Apps copy this folder.</summary>
   public string Translations { get; set; } = "translations";
 
-  /// <summary>Folders `rcinel scan` searches for Rcinel.Translate calls, relative to rcinel.json.</summary>
+  /// <summary>Folders `rtr scan` searches for Rcinel.Translate calls, relative to rcinel-translate.json.</summary>
   public List<string> Sources { get; set; } = [];
 
   /// <summary>
-  /// The calls `rcinel scan` looks for. The default covers the bare call in every client
+  /// The calls `rtr scan` looks for. The default covers the bare call in every client
   /// (Translate in C#, translate in Java and JavaScript) and the qualified Rcinel.translate. Bare
   /// names only count with "" or a UUID as the first argument, so other libraries' translate
   /// functions are ignored. Add more if the app wraps the call, for example "T".
