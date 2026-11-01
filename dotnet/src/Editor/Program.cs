@@ -25,7 +25,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
   {
     options.LoginPath = "/login";
     options.AccessDeniedPath = "/denied";
-    options.Cookie.Name = "rcinel";
+    // Not just "rcinel": other Rcinel apps on the same host would overwrite each other's cookie.
+    options.Cookie.Name = "rcinel-translate";
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
