@@ -18,6 +18,11 @@ public class CheckerTests
   [InlineData("<b>Bold</b> text", "<b>Fetter</b> Text", null)]
   [InlineData("<b>Bold</b>", "Fett", "missing </b> <b>")]
   [InlineData("{{count}} items", "{{count}} Einträge", null)]
+  [InlineData("{} of {}", "{} von {}", null)]
+  [InlineData("{} of {}", "{} von", "missing {}")]
+  [InlineData("value: {:?}", "Wert:", "missing {:?}")]
+  [InlineData("Hello %(name)s, %(count)d new", "%(count)d neue, hallo %(name)s", null)]
+  [InlineData("Hello %(name)s", "Hallo", "missing %(name)s")]
   public void Placeholders_must_survive(string source, string translation, string? problem) =>
     Assert.Equal(problem, Placeholders.Compare(source, translation));
 

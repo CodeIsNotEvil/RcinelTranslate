@@ -5,8 +5,9 @@ using System.Text.RegularExpressions;
 namespace Rcinel.Translate.Core;
 
 /// <summary>
-/// Finds the parts of a text that the app fills in or interprets: {0}, {name}, {{name}}, printf-style
-/// %s / %1$d / %@, and markup tags such as &lt;b&gt;. A translation must keep all of them, or the
+/// Finds the parts of a text that the app fills in or interprets: {0}, {name}, {{name}}, Rust's and
+/// Python's {} / {:?}, printf-style %s / %1$d / %@, Python's %(name)s, and markup tags such as
+/// &lt;b&gt;. A translation must keep all of them, or the
 /// app shows "{nmae}" or crashes in String.format. Order may change, since languages order words
 /// differently.
 /// </summary>
@@ -15,6 +16,8 @@ public static class Placeholders
   private static readonly Regex Pattern = new(
     @"\{\{\s*[\w.]+\s*\}\}"                         // i18next / mustache {{name}}
     + @"|\{[\w.]+(?:[,:][^{}]*)?\}"                  // {0}, {name}, {0:N2}, {count, plural, ...} heads
+    + @"|\{(?::[^{}]*)?\}"                           // Rust and Python format: {}, {:?}, {:>8}
+    + @"|%\([\w.]+\)[-#+ 0]*\d*(?:\.\d+)?[sdfiuxXeEgGcroa]" // Python %(name)s, %(count)d
     + @"|%(?:\d+\$)?[-#+ 0,(]*\d*(?:\.\d+)?[sdfiuxXeEgGcboaA@]" // printf, Java, Android, iOS
     + @"|</?[a-zA-Z][\w-]*(?:\s[^<>]*)?/?>",          // <b>, </b>, <br/>, <a href="...">
     RegexOptions.CultureInvariant);

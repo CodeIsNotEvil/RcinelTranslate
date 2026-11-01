@@ -46,7 +46,7 @@ public static class SourceScanner
 {
   /// <summary>File types that are scanned by default.</summary>
   public static readonly string[] Extensions =
-    [".cs", ".razor", ".cshtml", ".xaml", ".axaml", ".java", ".kt", ".kts", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts", ".vue", ".svelte"];
+    [".cs", ".razor", ".cshtml", ".xaml", ".axaml", ".java", ".kt", ".kts", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts", ".vue", ".svelte", ".py", ".pyi", ".rs"];
 
   // Build output and dependencies: big, generated, and full of other people's calls.
   private static readonly HashSet<string> SkippedFolders = new(StringComparer.OrdinalIgnoreCase)
