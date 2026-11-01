@@ -81,3 +81,5 @@ python/dist/
 .venv/
 # Rust
 rust/target/
+# A library's lock file only pins its test dependency (serde_json); CI resolves it fresh.
+rust/Cargo.lock
