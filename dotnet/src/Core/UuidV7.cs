@@ -45,7 +45,7 @@ public static class UuidV7
 
   /// <summary>
   /// A new id for <paramref name="now"/>. Ids made in the same millisecond count up in the 12
-  /// "rand_a" bits (RFC 9562 method 1), so ids from one `rcinel scan --assign` run still sort in the
+  /// "rand_a" bits (RFC 9562 method 1), so ids from one `rtr scan --assign` run still sort in the
   /// order they were made.
   /// </summary>
   public static string New(DateTimeOffset now)

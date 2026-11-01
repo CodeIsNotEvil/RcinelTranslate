@@ -19,7 +19,7 @@
       <button class="ghost" @onclick="Reload" title="Read the files again, for example after a git pull">Reload from disk</button>
       @if (isAdmin && model.CanScan)
       {
-        <button class="ghost" @onclick="Scan" title="Collect Rcinel.Translate calls from the code, like `rcinel scan`">Scan code</button>
+        <button class="ghost" @onclick="Scan" title="Collect Rcinel.Translate calls from the code, like `rtr scan`">Scan code</button>
       }
     </div>
   </header>
@@ -101,7 +101,7 @@
   {
     <section class="card">
       <h2>Checks</h2>
-      <p class="muted small">The same checks as <code>rcinel check</code>. Errors would break or confuse the app.</p>
+      <p class="muted small">The same checks as <code>rtr check</code>. Errors would break or confuse the app.</p>
       <ul class="issues">
         @foreach (ProjectIssue issue in model.Issues.Take(50))
         {
@@ -205,7 +205,7 @@
     });
     message = update is not null
       ? $"Scanned {scan!.FilesScanned} files: {update.Added} new, {update.Changed} changed, {update.Removed} removed strings."
-      : $"The scan found errors, so nothing changed: {string.Join(" ", scan!.Issues.Where(i => i.IsError).Take(3).Select(i => $"{Path.GetFileName(i.File)}:{i.Line} {i.Message}."))} Run `rcinel scan` for the full list.";
+      : $"The scan found errors, so nothing changed: {string.Join(" ", scan!.Issues.Where(i => i.IsError).Take(3).Select(i => $"{Path.GetFileName(i.File)}:{i.Line} {i.Message}."))} Run `rtr scan` for the full list.";
   }
 
   private void AddLanguage()

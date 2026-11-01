@@ -33,7 +33,7 @@ public sealed class CliTests : IDisposable
 
     // Without --assign the empty ids are errors and nothing is written.
     Assert.Equal(Cli.Failed, Run("scan", "--project", I18n));
-    Assert.Contains("rcinel scan --assign", error.ToString());
+    Assert.Contains("rtr scan --assign", error.ToString());
 
     Assert.Equal(Cli.Ok, Run("scan", "--project", I18n, "--assign"));
     Assert.Contains("2 strings in 1 files: 2 new", output.ToString());

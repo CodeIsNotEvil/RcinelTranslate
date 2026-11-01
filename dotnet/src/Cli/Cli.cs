@@ -6,7 +6,7 @@ using Rcinel.Translate.Core;
 namespace Rcinel.Translate.Cli;
 
 /// <summary>
-/// The rcinel command. Hand-rolled argument parsing: nine small commands don't justify a
+/// The rtr command (Rcinel TRanslate). Hand-rolled argument parsing: nine small commands don't justify a
 /// dependency, and the tool should start fast in CI.
 /// </summary>
 internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>? translatorFactory = null)
@@ -16,9 +16,9 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
   public const int Usage = 2;
 
   private const string Help = """
-    rcinel - translations keyed by UUIDv7 (https://github.com/CodeIsNotEvil/RcinelTranslate)
+    rtr - RcinelTranslate, translations keyed by UUIDv7 (https://github.com/CodeIsNotEvil/RcinelTranslate)
 
-    Usage: rcinel <command> [options]
+    Usage: rtr <command> [options]
 
       init [folder]          Create a project (default folder: ./i18n)
           --name <name>        App name, shown to translators and the AI
@@ -42,8 +42,8 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
           --confirmed-only     Leave out drafts, stale and unreviewed translations
       draft <code>           Draft missing and stale translations with Claude (needs ANTHROPIC_API_KEY)
 
-    Every command but init and id takes --project <path>: rcinel.json, its folder, or a folder
-    below it. Without it, rcinel looks in the current folder, its i18n folder and the folders above.
+    Every command but init and id takes --project <path>: rcinel-translate.json, its folder, or a folder
+    below it. Without it, rtr looks in the current folder, its i18n folder and the folders above.
     """;
 
   public int Run(string[] args) => RunAsync(args).GetAwaiter().GetResult();
@@ -92,7 +92,7 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
 
   private int Unknown(string command)
   {
-    error.WriteLine($"Unknown command \"{command}\". Run `rcinel help`.");
+    error.WriteLine($"Unknown command \"{command}\". Run `rtr help`.");
     return Usage;
   }
 
@@ -119,7 +119,7 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
     }
     TranslationProject project = TranslationProject.Create(folder, settings);
     output.WriteLine($"Created {project.ProjectFile}.");
-    output.WriteLine($"Ship the folder {project.TranslationsDirectory} with the app, then write texts as Translate(\"\", \"English text\") (C#, with `using static Rcinel.Translate.Rcinel;`) or Rcinel.translate(\"\", \"English text\") (Java, JavaScript) and run `rcinel scan --assign`.");
+    output.WriteLine($"Ship the folder {project.TranslationsDirectory} with the app, then write texts as Translate(\"\", \"English text\") (C#, with `using static Rcinel.Translate.Rcinel;`) or Rcinel.translate(\"\", \"English text\") (Java, JavaScript) and run `rtr scan --assign`.");
     return Ok;
   }
 
@@ -138,7 +138,7 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
     TranslationProject project = Load(a);
     if (project.Settings.Sources.Count == 0)
     {
-      error.WriteLine("rcinel.json lists no \"sources\" folders to scan.");
+      error.WriteLine("rcinel-translate.json lists no \"sources\" folders to scan.");
       return Failed;
     }
     bool dryRun = a.Flag("dry-run");
@@ -161,7 +161,7 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
       + (scan.AssignedIds > 0 ? $", {scan.AssignedIds} ids assigned" : "") + (dryRun ? " (dry run, nothing written)." : "."));
     if (update.Removed > 0)
     {
-      output.WriteLine("Translations of removed strings stay until `rcinel prune`.");
+      output.WriteLine("Translations of removed strings stay until `rtr prune`.");
     }
     return Ok;
   }
@@ -192,7 +192,7 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
     output.WriteLine($"{project.Settings.Name}: {project.Source.Count} strings in {project.Settings.SourceLanguage}");
     if (rows.Count == 0)
     {
-      output.WriteLine("No target languages yet. Add one with `rcinel add-language de`.");
+      output.WriteLine("No target languages yet. Add one with `rtr add-language de`.");
       return Ok;
     }
     int width = Math.Max(8, rows.Max(r => r.Language.Length));
@@ -254,17 +254,17 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
 
   private int AddLanguage(Arguments a)
   {
-    string code = a.Positional(0) ?? throw new ArgumentException("Which language? For example: rcinel add-language de --name Deutsch");
+    string code = a.Positional(0) ?? throw new ArgumentException("Which language? For example: rtr add-language de --name Deutsch");
     TranslationProject project = Load(a);
     project.AddLanguage(new LanguageSettings { Code = code, Name = a.Option("name") ?? "" });
     project.Save();
-    output.WriteLine($"Added {code}. Draft it with `rcinel draft {code}` or open it in the editor.");
+    output.WriteLine($"Added {code}. Draft it with `rtr draft {code}` or open it in the editor.");
     return Ok;
   }
 
   private int Export(Arguments a)
   {
-    string folder = a.Positional(0) ?? throw new ArgumentException("Where to? For example: rcinel export build/translations --confirmed-only");
+    string folder = a.Positional(0) ?? throw new ArgumentException("Where to? For example: rtr export build/translations --confirmed-only");
     TranslationProject project = Load(a);
     List<string> files = Exporter.Export(project, Path.GetFullPath(folder), a.Flag("confirmed-only"));
     output.WriteLine($"Wrote {files.Count} files to {Path.GetFullPath(folder)}.");
@@ -273,7 +273,7 @@ internal sealed class Cli(TextWriter output, TextWriter error, Func<ITranslator>
 
   private async Task<int> Draft(Arguments a)
   {
-    string code = a.Positional(0) ?? throw new ArgumentException("Which language? For example: rcinel draft de");
+    string code = a.Positional(0) ?? throw new ArgumentException("Which language? For example: rtr draft de");
     TranslationProject project = Load(a);
     ITranslator translator = translatorFactory?.Invoke() ?? new ClaudeTranslator();
     if (!translator.IsConfigured)

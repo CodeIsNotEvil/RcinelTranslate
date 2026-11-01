@@ -18,8 +18,9 @@ Format: a `## <version> - <yyyy-mm-dd>` heading per release (the version must ma
   set to `false` switches that off.
 - The file format: one flat JSON file per language, sorted by UUIDv7 so new strings land at the end,
   plus review and context files for the editor.
-- The `rcinel` command: `init`, `scan` (with `--assign` to fill in ids), `status`, `check`, `format`,
-  `prune`, `add-language`, `export` and `draft`.
+- The `rtr` command (Rcinel TRanslate, from the `Rcinel.Translate.Cli` tool package): `init`,
+  `scan` (with `--assign` to fill in ids), `status`, `check`, `format`, `prune`, `add-language`,
+  `export` and `draft`.
 - The web editor: progress per language, review with confirm and draft states, outdated detection
   when the English changes, placeholder checks, AI drafts with Claude, screenshots with marked texts
   and a live preview of each translation in place, and users with admin and translator roles.

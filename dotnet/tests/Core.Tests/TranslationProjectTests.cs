@@ -24,7 +24,7 @@ public class TranslationProjectTests
   {
     using TempProject temp = new("de");
     string dir = temp.ProjectDirectory;
-    Assert.True(File.Exists(Path.Combine(dir, "rcinel.json")));
+    Assert.True(File.Exists(Path.Combine(dir, "rcinel-translate.json")));
     Assert.True(File.Exists(Path.Combine(dir, "translations", "en.json")));
     Assert.True(File.Exists(Path.Combine(dir, "translations", "de.json")));
     Assert.True(File.Exists(Path.Combine(dir, "review", "de.json")));
@@ -143,6 +143,24 @@ public class TranslationProjectTests
     string deep = Path.Combine(temp.ProjectDirectory, "translations");
     Assert.Equal(temp.Project.ProjectFile, TranslationProject.FindProjectFile(deep));
     Assert.Equal(temp.Project.ProjectFile, TranslationProject.FindProjectFile(temp.Root));
+  }
+
+  [Fact]
+  public void A_project_with_the_legacy_file_name_still_loads_and_saves_in_place()
+  {
+    using TempProject temp = WithSource();
+    string current = Path.Combine(temp.ProjectDirectory, TranslationProject.FileName);
+    string legacy = Path.Combine(temp.ProjectDirectory, TranslationProject.LegacyFileName);
+    File.Move(current, legacy);
+
+    TranslationProject loaded = TranslationProject.Load(temp.Root);
+    Assert.Equal(legacy, loaded.ProjectFile);
+    loaded.Settings.Name = "Renamed";
+    loaded.Save();
+
+    Assert.False(File.Exists(current));
+    Assert.Equal("Renamed", TranslationProject.Load(legacy).Settings.Name);
+    Assert.Throws<IOException>(() => TranslationProject.Create(temp.ProjectDirectory, new ProjectSettings()));
   }
 
   [Fact]

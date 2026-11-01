@@ -118,7 +118,7 @@ public sealed class ProjectStore : IProjectAccess
     }
   }
 
-  // Someone ran git pull or `rcinel scan` while the editor was open. Checked at most once a second,
+  // Someone ran git pull or `rtr scan` while the editor was open. Checked at most once a second,
   // since every render reads.
   private bool ReloadIfChangedOnDisk(bool force = false)
   {

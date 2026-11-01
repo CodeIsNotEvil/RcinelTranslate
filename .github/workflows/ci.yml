@@ -52,7 +52,7 @@ jobs:
           dotnet-version: 10.0.x
       - run: dotnet test RcinelTranslate.slnx
       # The demo project is checked like an app's project would be in its own CI.
-      - name: rcinel check on the demo
+      - name: rtr check on the demo
         run: dotnet run --project src/Cli -- check --project ../samples/demo/i18n
       - name: Pack the libraries and the tool
         run: |

@@ -1,4 +1,4 @@
-# Publishes a release when a vX.Y.Z tag is pushed: the .NET packages (client, core, rcinel tool) to
+# Publishes a release when a vX.Y.Z tag is pushed: the .NET packages (client, core, the rtr tool) to
 # NuGet, the Java client to Maven Central, the JavaScript client to npm, and a GitHub release with the
 # CHANGELOG.md section as notes. CI runs first and checks that the tag, the three version numbers
 # and the changelog agree, so nothing is published from a broken or mislabelled commit.

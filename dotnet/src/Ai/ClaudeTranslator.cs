@@ -112,7 +112,7 @@ public sealed class ClaudeTranslator : ITranslator
     }
     if (stop.Contains("max_tokens", StringComparison.OrdinalIgnoreCase))
     {
-      throw new TranslationException("The reply was cut off. Lower ai.batchSize in rcinel.json.");
+      throw new TranslationException("The reply was cut off. Lower ai.batchSize in rcinel-translate.json.");
     }
 
     string json = string.Concat(response.Content.Select(b => b.Value).OfType<BetaTextBlock>().Select(t => t.Text));

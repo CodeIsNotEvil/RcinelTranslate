@@ -5,7 +5,7 @@ public sealed class EditorOptions
 {
   public const string Section = "Rcinel";
 
-  /// <summary>rcinel.json or the folder that holds it. Usually the i18n folder of a git checkout.</summary>
+  /// <summary>rcinel-translate.json or the folder that holds it. Usually the i18n folder of a git checkout.</summary>
   public string Project { get; set; } = "";
 
   /// <summary>
