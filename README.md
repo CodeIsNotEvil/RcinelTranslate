@@ -166,7 +166,7 @@ GitHub release. Re-running it after a partial failure is safe. It needs these re
 
 | Registry | Secrets |
 |---|---|
-| NuGet | `NUGET_API_KEY` (push rights for `Rcinel.Translate*`) |
+| NuGet | `NUGET_USER` (your nuget.org profile name). Publishing is trusted: add a policy under your nuget.org account, **Trusted Publishing**, for owner `CodeIsNotEvil`, repository `RcinelTranslate`, workflow `release.yml`. |
 | Maven Central | `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD` (a user token from central.sonatype.com, with the `io.github.codeisnotevil` namespace verified), `MAVEN_SIGNING_KEY` (an ASCII-armored GPG private key), `MAVEN_SIGNING_PASSWORD` |
 | npm | `NPM_TOKEN` |
 | PyPI | `PYPI_API_TOKEN` |

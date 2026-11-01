@@ -1,9 +1,12 @@
 # Publishes a release when a vX.Y.Z tag is pushed: the .NET packages (client, core, the rtr tool) to
 # NuGet, the Java client to Maven Central, the JavaScript client to npm, the Python client to PyPI,
-# the Rust client to crates.io, and a GitHub release with the CHANGELOG.md section as notes. CI runs first and checks that the tag, the three version numbers
-# and the changelog agree, so nothing is published from a broken or mislabelled commit.
+# the Rust client to crates.io, and a GitHub release with the CHANGELOG.md section as notes. CI runs
+# first and checks that the tag, the five version numbers and the changelog agree, so nothing is
+# published from a broken or mislabelled commit.
 #
-# Secrets (README, "Releasing"): NUGET_API_KEY; MAVEN_CENTRAL_USERNAME, MAVEN_CENTRAL_PASSWORD (a
+# NuGet uses trusted publishing: no stored API key, only a nuget.org policy that trusts this file.
+#
+# Secrets (README, "Releasing"): NUGET_USER; MAVEN_CENTRAL_USERNAME, MAVEN_CENTRAL_PASSWORD (a
 # Central Portal user token), MAVEN_SIGNING_KEY, MAVEN_SIGNING_PASSWORD; NPM_TOKEN; PYPI_API_TOKEN;
 # CARGO_REGISTRY_TOKEN.
 name: Release
@@ -27,6 +30,12 @@ jobs:
   nuget:
     needs: ci
     runs-on: ubuntu-24.04
+    # id-token: NuGet/login trades the workflow's OIDC token for a short-lived API key. nuget.org
+    # hands one out only to the repository and workflow file its trusted publishing policy names,
+    # so renaming release.yml means updating the policy too.
+    permissions:
+      contents: read
+      id-token: write
     defaults:
       run:
         working-directory: dotnet
@@ -35,12 +44,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - name: The API key is there
+      # The login would fail too, but with a token-service error that doesn't say what's missing.
+      - name: The user is there
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_USER: ${{ secrets.NUGET_USER }}
         run: |
-          if [ -z "$NUGET_API_KEY" ]; then
-            echo "::error::The NUGET_API_KEY secret is missing. See README.md, \"Releasing\"."
+          if [ -z "$NUGET_USER" ]; then
+            echo "::error::The NUGET_USER secret is missing (your nuget.org profile name, not the email). See README.md, \"Releasing\"."
             exit 1
           fi
       # ContinuousIntegrationBuild makes the build deterministic and maps the source paths in the
@@ -50,10 +60,16 @@ jobs:
           for project in src/Translate src/Core src/Cli; do
             dotnet pack "$project" -c Release -o ../artifacts -p:ContinuousIntegrationBuild=true
           done
+      # Logs in after packing, so the short-lived key isn't spent on the build.
+      - name: Log in to NuGet
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
       # --skip-duplicate: re-running a release whose NuGet step already went through must not fail.
       - name: Push
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: dotnet nuget push "../artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
       - uses: actions/upload-artifact@v4
         with:
