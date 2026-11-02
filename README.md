@@ -1,5 +1,16 @@
 # RcinelTranslate
 
+[![CI](https://github.com/CodeIsNotEvil/RcinelTranslate/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeIsNotEvil/RcinelTranslate/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/CodeIsNotEvil/RcinelTranslate)](LICENSE)
+
+| Client | Package | Supply chain |
+|---|---|---|
+| .NET | [![NuGet](https://img.shields.io/nuget/v/Rcinel.Translate)](https://www.nuget.org/packages/Rcinel.Translate) | [![Socket Badge](https://badge.socket.dev/nuget/package/Rcinel.Translate)](https://socket.dev/nuget/package/Rcinel.Translate) |
+| Java | [![Maven Central](https://img.shields.io/maven-central/v/io.github.codeisnotevil/rcinel-translate)](https://central.sonatype.com/artifact/io.github.codeisnotevil/rcinel-translate) | [![Socket Badge](https://badge.socket.dev/maven/package/io.github.codeisnotevil:rcinel-translate)](https://socket.dev/maven/package/io.github.codeisnotevil:rcinel-translate) |
+| JavaScript | [![npm](https://img.shields.io/npm/v/rcinel-translate)](https://www.npmjs.com/package/rcinel-translate) | [![Socket Badge](https://badge.socket.dev/npm/package/rcinel-translate)](https://socket.dev/npm/package/rcinel-translate) |
+| Python | [![PyPI](https://img.shields.io/pypi/v/rcinel-translate)](https://pypi.org/project/rcinel-translate/) | [![Socket Badge](https://badge.socket.dev/pypi/package/rcinel-translate)](https://socket.dev/pypi/package/rcinel-translate) |
+| Rust | [![crates.io](https://img.shields.io/crates/v/rcinel-translate)](https://crates.io/crates/rcinel-translate) | [![Socket Badge](https://badge.socket.dev/cargo/package/rcinel-translate)](https://socket.dev/cargo/package/rcinel-translate) |
+
 Translations for apps, keyed by UUIDv7. Write the English text where it's used:
 
 ```csharp
