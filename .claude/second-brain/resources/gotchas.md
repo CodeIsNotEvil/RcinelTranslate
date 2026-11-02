@@ -1,7 +1,7 @@
 ---
 tags: [resource, gotcha]
 created: 2026-10-31
-updated: 2026-10-31
+updated: 2026-11-02
 status: active
 ---
 # Gotchas
@@ -27,5 +27,8 @@ status: active
 - **The invariant culture's name is "".** `CultureInfo.CurrentUICulture.Name` is empty in many
   containers; anything that takes "the system language" must treat "" as "none".
 - **Maven Central rate-limits** (HTTP 429) from shared CI or sandbox IPs; retry with back-off.
+- **Trusted publishing needs the package to exist on npm and crates.io.** Neither lets you add a
+  trusted publisher before the first version is up, so a new package's first release goes out with
+  a token. PyPI is different: it takes a "pending" publisher for a name nobody owns yet.
 
 Related: [[rcineltranslate]]
