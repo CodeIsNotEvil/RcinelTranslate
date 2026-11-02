@@ -168,9 +168,9 @@ GitHub release. Re-running it after a partial failure is safe. It needs these re
 |---|---|
 | NuGet | `NUGET_USER` (your nuget.org profile name). Publishing is trusted: add a policy under your nuget.org account, **Trusted Publishing**, for owner `CodeIsNotEvil`, repository `RcinelTranslate`, workflow `release.yml`. |
 | Maven Central | `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD` (a user token from central.sonatype.com, with the `io.github.codeisnotevil` namespace verified), `MAVEN_SIGNING_KEY` (an ASCII-armored GPG private key), `MAVEN_SIGNING_PASSWORD` |
-| npm | `NPM_TOKEN` |
-| PyPI | `PYPI_API_TOKEN` |
-| crates.io | `CARGO_REGISTRY_TOKEN` (publish scope) |
+| npm | `NPM_TOKEN` (a granular token with read and write). npm only lets you add a trusted publisher once the package exists, so the first release still needs the token. |
+| PyPI | None. Publishing is trusted: on pypi.org, **Your projects → Publishing**, add a pending publisher for project `rcinel-translate`, owner `CodeIsNotEvil`, repository `RcinelTranslate`, workflow `release.yml`, no environment. |
+| crates.io | `CARGO_REGISTRY_TOKEN` (`publish-new` and `publish-update` scopes) |
 
 ## License
 

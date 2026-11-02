@@ -8,7 +8,7 @@ Format: a `## <version> - <yyyy-mm-dd>` heading per release (the version must ma
 `dotnet/Directory.Build.props`, `java/gradle.properties` and `javascript/package.json`), then
 `### Added`, `### Changed` or `### Fixed` with one bullet per change.
 
-## 0.1.0 - Unreleased
+## 0.1.0 - 2026-11-02
 
 ### Added
 - Clients for .NET (netstandard2.0), Java (8+), JavaScript, Python (3.9+) and Rust (1.70+) that load

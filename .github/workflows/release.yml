@@ -4,10 +4,11 @@
 # first and checks that the tag, the five version numbers and the changelog agree, so nothing is
 # published from a broken or mislabelled commit.
 #
-# NuGet uses trusted publishing: no stored API key, only a nuget.org policy that trusts this file.
+# NuGet and PyPI use trusted publishing: no stored API key, only a policy on nuget.org and a
+# trusted publisher on pypi.org that trust this file.
 #
 # Secrets (README, "Releasing"): NUGET_USER; MAVEN_CENTRAL_USERNAME, MAVEN_CENTRAL_PASSWORD (a
-# Central Portal user token), MAVEN_SIGNING_KEY, MAVEN_SIGNING_PASSWORD; NPM_TOKEN; PYPI_API_TOKEN;
+# Central Portal user token), MAVEN_SIGNING_KEY, MAVEN_SIGNING_PASSWORD; NPM_TOKEN;
 # CARGO_REGISTRY_TOKEN.
 name: Release
 
@@ -153,6 +154,14 @@ jobs:
   pypi:
     needs: ci
     runs-on: ubuntu-24.04
+    # id-token: the PyPI action trades the workflow's OIDC token for a short-lived upload token.
+    # PyPI hands one out only to the repository and workflow file its trusted publisher names, so
+    # renaming release.yml means updating the publisher too. Unlike npm and crates.io, PyPI accepts
+    # a "pending" publisher for a project that doesn't exist yet, so even the first upload needs no
+    # stored token.
+    permissions:
+      contents: read
+      id-token: write
     defaults:
       run:
         working-directory: python
@@ -161,24 +170,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: The token is there
-        env:
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          if [ -z "$PYPI_API_TOKEN" ]; then
-            echo "::error::The PYPI_API_TOKEN secret is missing. See README.md, \"Releasing\"."
-            exit 1
-          fi
       - name: Build
         run: |
-          python -m pip install --quiet build twine
+          python -m pip install --quiet build
           python -m build
-      # --skip-existing: re-running a release whose PyPI step already went through must not fail.
+      # skip-existing: re-running a release whose PyPI step already went through must not fail.
       - name: Upload
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: python -m twine upload --skip-existing dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist/
+          skip-existing: true
       - uses: actions/upload-artifact@v4
         with:
           name: python
